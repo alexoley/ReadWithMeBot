@@ -17,23 +17,23 @@ configurations {
 	}
 }
 
+
 repositories {
 	mavenCentral()
+	jcenter()
 }
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+	implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.4")
 	testImplementation("org.springframework.boot:spring-boot-starter-test") {
 		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
 	}
 	implementation("org.telegram:telegrambots-abilities:4.7")
 	implementation("org.telegram:telegrambots-spring-boot-starter:4.1.2")
 	implementation("org.apache.pdfbox:pdfbox:2.0.19")
-	//implementation("org.slf4j:slf4j-simple:1.6.1")
-
-
 }
 
 tasks.withType<Test> {

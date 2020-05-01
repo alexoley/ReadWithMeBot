@@ -1,4 +1,4 @@
-package org.stream.bot.services.impl
+package org.stream.bot.services.impl.document.extractors
 
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.text.PDFTextStripper
@@ -18,14 +18,17 @@ class PdfFormatExtractor: IDocumentFormatExtractor {
         return format;
     }
 
-
-    override fun extractTextFromDocument(file: File): String {
+    override fun extractTextFromDocument(file: File, startPage: Int, endPage: Int): String {
         PDDocument.load(file).use { doc ->
             val stripper = PDFTextStripper()
-            stripper.setStartPage(1)
-            stripper.setEndPage(2)
-            return stripper.getText(doc)
+            stripper.setStartPage(startPage)
+            stripper.setEndPage(endPage)
+            val text = stripper.getText(doc)
+            return text
         }
     }
 
+    override fun numberOfPages(file: File): Int {
+        PDDocument.load(file).use { return it.numberOfPages }
+    }
 }

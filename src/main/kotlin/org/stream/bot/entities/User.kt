@@ -10,5 +10,5 @@ data class User(@Id val id: String,
                 val lastName: String? = "",
                 val nickname: String? = "",
                 val subscriber: Subscribers,
-                var quantityBookLimit: Int = 5,
-                val fileList: ArrayList<FileInfo>? = arrayListOf())
+                var quantityBookLimit: Int = 3,
+                val fileList: ArrayList<FileInfo> = arrayListOf())

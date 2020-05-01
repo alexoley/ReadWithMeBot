@@ -6,37 +6,42 @@ import org.stream.bot.entities.FileInfo
 import org.stream.bot.entities.User
 import org.stream.bot.repositories.UserReactiveRepository
 import org.stream.bot.services.IUserService
-import org.telegram.telegrambots.meta.api.objects.Update
+import org.stream.bot.utils.Subscribers
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+import kotlinx.coroutines.*
+import org.slf4j.LoggerFactory
+import java.util.function.Consumer
 
 @Service
 class UserService : IUserService {
 
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     @Autowired
     lateinit var userReactiveRepository: UserReactiveRepository
 
-    override fun saveUserIfNotExist(user: User) {
-        if(!userReactiveRepository.existsByIdAndSubscriber(user.id, user.subscriber).block()!!){
-            userReactiveRepository.save(user).block()
-        }
+    override fun getUserByIdAndSubscriber(id: String, subscriber: Subscribers): Mono<User> {
+        return userReactiveRepository.findByIdAndSubscriber(id, subscriber)
     }
 
-    override fun addBookIfNotExists(user: User, update: Update) {
-        val monoUser = userReactiveRepository.findByIdAndSubscriber(user.id,user.subscriber)
-        /*val fileInfo= FileInfo(fileName = update.message.document.fileName,
-                mimeType = update.message.document.mimeType,
-                fileSize = update.message.document.fileSize)*/
-        TODO("not implemented")
+    override fun saveUserIfNotExist(user: User){
+        userReactiveRepository.existsByIdAndSubscriber(user.id, user.subscriber)
+                .subscribe(
+                        Consumer { t ->
+                            if (t!=null && t.not()){
+                                userReactiveRepository.save(user).subscribe()
+                            }
+                        },
+                        Consumer { t -> logger.error(t.message) }
+                )
     }
 
-    override fun removeBookFromUser(user: User, fileInfo: FileInfo) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun saveUser(user: User): Mono<User>{
+        return userReactiveRepository.save(user)
     }
 
-    override fun getAllUserBooks(user: User): ArrayList<FileInfo> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getAllUserBooksHash(books: ArrayList<FileInfo>): List<String> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun getAllUsers(): Flux<User> {
+        return userReactiveRepository.findAll()
     }
 }
