@@ -18,11 +18,11 @@ class PdfFormatExtractor: IDocumentFormatExtractor {
         return format;
     }
 
-    override fun extractTextFromDocument(file: File, startPage: Int, endPage: Int): String {
+    override fun extractTextFromDocumentPage(file: File, page: Int): String {
         PDDocument.load(file).use { doc ->
             val stripper = PDFTextStripper()
-            stripper.setStartPage(startPage)
-            stripper.setEndPage(endPage)
+            stripper.setStartPage(page)
+            stripper.setEndPage(page)
             val text = stripper.getText(doc)
             return text
         }

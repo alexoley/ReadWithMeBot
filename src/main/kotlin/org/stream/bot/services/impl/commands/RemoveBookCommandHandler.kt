@@ -27,6 +27,7 @@ class RemoveBookCommandHandler : ICommandHandler {
     lateinit var userService: IUserService
 
     override fun answer(update: Update) {
+        //TODO: Refactor this method
         val user = userService
                 .getUserByIdAndSubscriber(update.message.from.id.toString(), Subscribers.TELEGRAM).block()
         if (user != null) {

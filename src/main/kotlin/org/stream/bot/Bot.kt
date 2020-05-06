@@ -24,6 +24,7 @@ import java.util.function.Consumer
 import java.util.function.Predicate
 import kotlinx.coroutines.*
 import org.stream.bot.services.impl.commands.StartCommandHandler
+import kotlin.coroutines.coroutineContext
 
 
 @Component
@@ -111,9 +112,9 @@ class Bot : AbilityBot {
                                     States.WAIT_FOR_BOOK.toString()))
                         addBookCommandHandler.firstReply(update)
                 }
-        return Reply.of(action, Flag.DOCUMENT)
-
+        return Reply.of(action, Flag.DOCUMENT);
     }
+
 
     fun cancelSending(): Reply {
         val action = Consumer { update: Update ->
@@ -140,7 +141,6 @@ class Bot : AbilityBot {
 
 
     fun removeBook(): Ability {
-        //TODO: Refactor this method
         return Ability.builder()
                 .name("removebook")
                 .info("Remove book from list")
@@ -173,6 +173,60 @@ class Bot : AbilityBot {
                 .locality(Locality.USER)
                 .action { ctx: MessageContext ->
                     getAllBooksCommandHandler.answer(ctx.update())
+                }
+                .post {}
+                .build()
+    }
+
+    fun test(): Ability {
+        return Ability.builder()
+                .name("test")
+                .info("test")
+                .input(0)
+                .privacy(Privacy.ADMIN)
+                .locality(Locality.USER)
+                .action { ctx: MessageContext ->
+                    /*try {
+                        val filepath=ctx.arguments()[0]
+                        logger.info(filepath)
+                        val startPage=ctx.arguments()[1]
+                        logger.info(startPage)
+                        val startLetterPosition=ctx.arguments()[2]
+                        logger.info(startLetterPosition)
+
+
+                        val file = File(filepath)
+                        val pair = pdfFormatExtractor.tempGetNextTextPartAndPosition(file,startPage.toInt(),startLetterPosition.toInt())
+                        logger.info(pair.second.toString())
+                        this.execute(SendMessage().setText(pair.first.makeBold())
+                                .enableMarkdown(true)
+                                .disableWebPagePreview()
+                                .setChatId(ctx.chatId()))
+                    }
+                    catch (e: TelegramApiException){
+                        e.printStackTrace()
+                    }
+                    catch (e: IOException){
+                        e.printStackTrace()
+                    }*/
+                    schedulerSender.scheduler()
+                }
+                .post {}
+                .build()
+    }
+
+    fun me(): Ability {
+        return Ability.builder()
+                .name("me")
+                .info("test")
+                .input(0)
+                .privacy(Privacy.ADMIN)
+                .locality(Locality.USER)
+                .action { ctx: MessageContext ->
+                    this.execute(SendMessage().setText("```sdkjfdslk\\*jfkdsjfk```")
+                            .enableMarkdownV2(true)
+                            .disableWebPagePreview()
+                            .setChatId(ctx.chatId()))
                 }
                 .post {}
                 .build()

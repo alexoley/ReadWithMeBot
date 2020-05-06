@@ -11,7 +11,7 @@ interface IDocumentFormatExtractor {
     fun getDocumentFormat(): String
 
     @Throws(IOException::class)
-    fun extractTextFromDocument(file: File, startPage: Int, endPage: Int): String
+    fun extractTextFromDocumentPage(file: File, page: Int): String
 
     fun numberOfPages(file: File): Int
 }

@@ -19,4 +19,4 @@ class ReadWithMeBotApplication
 //TODO: 1. Move code that sends messages to user from bot to specific classes
 // 2. Move all message text to properties(create internalization)
 // 3. Add functionality to remove file from persist storage when remove FileInfo from database
-// 4.
+// 4. Deal with MarkdownV2(problem with escaping special characters)

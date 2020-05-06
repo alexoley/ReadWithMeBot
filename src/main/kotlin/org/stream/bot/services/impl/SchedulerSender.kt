@@ -5,9 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.stream.bot.Bot
 import org.stream.bot.entities.FileInfo
-import org.stream.bot.entities.User
 import org.stream.bot.services.IUserService
-import org.stream.bot.services.impl.document.extractors.PdfFormatExtractor
 import org.stream.bot.services.impl.document.extractors.TextPartExtractorService
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
@@ -36,15 +34,16 @@ class SchedulerSender {
     }
 
     private fun sendMessageAndUpdate(fileInfo: FileInfo, chatId: String) {
-        val pair = textPartExtractorService.getNextTextPartAndPosition(fileInfo)
         try {
-            bot.execute(SendMessage().setText(pair.first)
+            val text = textPartExtractorService.getNextTextPartAndPosition(fileInfo)
+            //TODO: Add CallbackQuery(Get More, Read More,) to message
+            bot.execute(SendMessage().setText(text)
                     .setChatId(chatId)
                     .enableMarkdown(false)
                     .disableWebPagePreview())
-            fileInfo.lastSentPage = pair.second
         } catch (e: TelegramApiException) {
             logger.error(e.message)
+            e.printStackTrace()
         }
     }
 
@@ -57,9 +56,14 @@ class SchedulerSender {
                 }
                 .subscribe(
                         Consumer {
-                            it.fileList.forEach(Consumer { t -> sendMessageAndUpdate(t, it.id) })
+                            it.fileList.filter { filei -> filei.stillReading }.forEach(Consumer { filei -> sendMessageAndUpdate(filei, it.id) })
                             userService.saveUser(it).subscribe()
                         },
-                        Consumer { t -> logger.error(t.message) })
+                        Consumer { t ->
+                            {
+                                logger.error(t.message)
+                                t.printStackTrace()
+                            }
+                        })
     }
 }

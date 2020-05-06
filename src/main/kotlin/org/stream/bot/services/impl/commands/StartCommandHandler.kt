@@ -20,10 +20,10 @@ class StartCommandHandler: ICommandHandler {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @Autowired
-    private lateinit var bot: Bot
+    lateinit var bot: Bot
 
     @Autowired
-    private lateinit var userService: IUserService
+    lateinit var userService: IUserService
 
 
     override fun answer(update: Update) {

@@ -1,5 +1,6 @@
 package org.stream.bot.services.impl.commands
 
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -26,35 +27,58 @@ class AddBookCommandHandler : ICommandHandler {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @Autowired
-    private lateinit var documentFormatExtractorList: List<IDocumentFormatExtractor>
+    lateinit var documentFormatExtractorList: List<IDocumentFormatExtractor>
 
     @Autowired
-    private lateinit var documentPersistManager: IDocumentPersistManager
+    lateinit var documentPersistManager: IDocumentPersistManager
 
     @Autowired
-    private lateinit var bot: Bot
+    lateinit var bot: Bot
 
     @Autowired
-    private lateinit var userService: IUserService
+    lateinit var userService: IUserService
 
     override fun answer(update: Update) {
         try {
-            bot.execute(SendMessage()
-                    .setText("Send me book. The book should be no more than 20 megabytes.".botText())
+            val sendMessage = SendMessage()
                     .setChatId(AbilityUtils.getChatId(update))
-                    .setReplyMarkup(KeyboardFactory.cancelButton())
-                    .enableMarkdown(MARKDOWN_ENABLED))
-            //db.getMap<Any, Any>(BotConstants.CHAT_STATES)[ctx.chatId().toString()] = States.WAIT_FOR_BOOK
-            bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES,
-                    AbilityUtils.getChatId(update).toString(),
-                    States.WAIT_FOR_BOOK.toString())
+                    .enableMarkdown(MARKDOWN_ENABLED)
+
+            //Check if book limit not reached
+            userService.getUserByIdAndSubscriber(update.message.from.id.toString(), Subscribers.TELEGRAM).subscribe(
+                    Consumer { user ->
+                        if (user.fileList.count()>=user.quantityBookLimit){
+                            //sendMessage.setText("You already reached your book limit.\uD83D\uDE14".botText())
+                            //sendText="Your limit on the number of books is ${e.limit}.\nYou cannot exceed it."
+                            sendMessage.setText(("Your book limit is ${user.quantityBookLimit}." +
+                                    "\nAnd you have already reached it.\uD83D\uDE14" +
+                                    "\nTry to reduce your list of books with /removebook").botText())
+                        }
+                        else{
+                            sendMessage.setText("Send me book. The book should be no more than 20 megabytes.".botText())
+                                    .setReplyMarkup(KeyboardFactory.cancelButton())
+                            //db.getMap<Any, Any>(BotConstants.CHAT_STATES)[ctx.chatId().toString()] = States.WAIT_FOR_BOOK
+                            bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES,
+                                    AbilityUtils.getChatId(update).toString(),
+                                    States.WAIT_FOR_BOOK.toString())
+                        }
+                    },
+                    Consumer {
+                        t ->
+                        sendMessage.setText("Something went wrong on server side.\nTry this later.\uD83E\uDD15".botText())
+                        logger.error(t.message)
+                    }
+                    ,Runnable { bot.execute(sendMessage) }
+            )
         } catch (e: TelegramApiException) {
             e.printStackTrace()
         }
     }
+    
+    
 
     override fun firstReply(update: Update) {
-        val monoUser = userService.getUserByIdAndSubscriber(update.message.from.id.toString(), Subscribers.TELEGRAM).subscribe(
+        userService.getUserByIdAndSubscriber(update.message.from.id.toString(), Subscribers.TELEGRAM).subscribe(
                 Consumer { user ->
                     if (user!=null){
                         process(update, user)
@@ -82,11 +106,7 @@ class AddBookCommandHandler : ICommandHandler {
                 sendText = "I do not yet support this document format.\uD83D\uDE36"
                 return
             }
-            //Check if book limit not reached
-            //TODO: Move to first answer(first reply)
-            if (monoUser.fileList.count()>=monoUser.quantityBookLimit){
-                throw QuantityLimitBookException(monoUser.quantityBookLimit)
-            }
+
             logger.info("File size: ${update.message.document.fileSize}")
             //Send loading message if file more than 1 megabyte
             if(update.message.document.fileSize>1024*1024){
@@ -105,9 +125,6 @@ class AddBookCommandHandler : ICommandHandler {
                     ". I wish you an exciting read.\uD83D\uDE0C"
         } catch (e: DublicateBookException) {
             sendText = "You have already added this book.\uD83E\uDD28"
-        } catch (e: QuantityLimitBookException) {
-            sendText="You already reached your book limit.\uD83D\uDE14"
-            //sendText="Your limit on the number of books is ${e.limit}.\nYou cannot exceed it."
         } catch (e: TelegramApiException) {
             if (update.message?.document?.fileSize!! > BotConstants.MAX_TELEGRAM_FILE_SIZE) {
                 sendText = "Book size is too large.\uD83D\uDE16"
