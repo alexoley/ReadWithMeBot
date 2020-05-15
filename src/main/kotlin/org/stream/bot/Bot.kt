@@ -2,19 +2,18 @@ package org.stream.bot
 
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.model.File
-import com.google.api.services.drive.model.FileList
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.stream.bot.services.ICommandHandler
 import org.stream.bot.services.IUserService
-import org.stream.bot.services.impl.BookPartSender
+import org.stream.bot.services.impl.commands.BookPartSenderService
 import org.stream.bot.services.impl.Scheduler
+import org.stream.bot.services.impl.commands.CancelCommandHandler
 import org.stream.bot.utils.BotConstants
 import org.stream.bot.utils.KeyboardFactory
 import org.stream.bot.utils.States
-import org.stream.bot.utils.Subscribers
 import org.telegram.abilitybots.api.bot.AbilityBot
 import org.telegram.abilitybots.api.objects.*
 import org.telegram.abilitybots.api.util.AbilityUtils.getChatId
@@ -64,22 +63,13 @@ class Bot : AbilityBot {
     @Autowired
     lateinit var removeBookCommandHandler: ICommandHandler
 
-    //TODO: Delete from here
     @Autowired
-    lateinit var scheduler: Scheduler
+    lateinit var cancelCommandHandler: ICommandHandler
 
-    //TODO: Delete from here
     @Autowired
-    lateinit var userService: IUserService
+    lateinit var bookPartSenderService: BookPartSenderService
 
-    //TODO: Delete from here
-    @Autowired
-    lateinit var bookPartSender: BookPartSender
-
-    //TODO: Delete from here
-    @Autowired
-    lateinit var googleDrive: Drive
-
+    //TODO: Migrate to coroutines
     @Autowired
     lateinit var cc: CoroutineContext
 
@@ -129,25 +119,7 @@ class Bot : AbilityBot {
 
 
     fun cancelSending(): Reply {
-        val action = Consumer { update: Update ->
-            try {
-                if (isValueEqualsInMapEntry(BotConstants.CHAT_STATES,
-                                getChatId(update).toString(),
-                                States.WAIT_FOR_BOOK.toString())) {
-                    rewriteValueInMapEntry(BotConstants.CHAT_STATES,
-                            getChatId(update).toString(),
-                            States.NOT_WAITING.toString())
-                    this.execute(SendMessage()
-                            .setText("Action canceled.".makeItalic())
-                            .enableMarkdown(true)
-                            .setChatId(getChatId(update))
-                            .setReplyMarkup(KeyboardFactory.removeKeyboard()))
-                }
-
-            } catch (e: TelegramApiException) {
-                e.printStackTrace()
-            }
-        }
+        val action = Consumer { update: Update -> cancelCommandHandler.answer(update) }
         return Reply.of(action, Flag.TEXT, Predicate { update -> update.message.text.equals("Cancel") })
     }
 
@@ -174,23 +146,10 @@ class Bot : AbilityBot {
         return Reply.of(action, Flag.CALLBACK_QUERY)
     }
 
-    fun replyToGetNextCallback(): Reply? {
-        //TODO: Move to another class(refactor)
-        val action = Consumer { update: Update ->
-            userService.getUserByIdAndSubscriber(update.callbackQuery.from.id.toString(), Subscribers.TELEGRAM).subscribe(
-                    Consumer { user ->
-                        val callback = update.callbackQuery.data.subSequence(8, update.callbackQuery.data.length)
-                        if (user.fileList.asSequence().filter { it.stillReading }.any { it.checksum == callback }) {
-                            val fileinfo = user.fileList.asSequence()
-                                    .first { fileInfo -> fileInfo.checksum.equals(callback) }
-                            bookPartSender.sendMessageAndUpdate(fileinfo, getChatId(update).toString())
-                        }
-                        userService.saveUser(user).subscribe()
-                    },
-                    Consumer { e -> logger.error(e.message) }
-            )
-        }
-        return Reply.of(action, Flag.CALLBACK_QUERY, Predicate { update -> update.callbackQuery.data.startsWith("getnext:") })
+    fun replyToGetNextBookPart(): Reply {
+        val action = Consumer { update: Update -> bookPartSenderService.replyOnNextPageCallback(update) }
+        return Reply.of(action, Flag.CALLBACK_QUERY,
+                Predicate { update -> update.callbackQuery.data.startsWith("getnext:") })
     }
 
     fun getAllBooks(): Ability {
@@ -201,32 +160,6 @@ class Bot : AbilityBot {
                 .privacy(Privacy.PUBLIC)
                 .locality(Locality.USER)
                 .action { getAllBooksCommandHandler.answer(it.update()) }
-                .post {}
-                .build()
-    }
-
-    fun test(): Ability {
-        return Ability.builder()
-                .name("test")
-                .info("test")
-                .input(0)
-                .privacy(Privacy.ADMIN)
-                .locality(Locality.USER)
-                .action { scheduler.scheduler() }
-                .post {}
-                .build()
-    }
-
-    fun google(): Ability {
-        return Ability.builder()
-                .name("google")
-                .info("test")
-                .input(0)
-                .privacy(Privacy.ADMIN)
-                .locality(Locality.USER)
-                .action {
-                    googleDrive.files().create(File())
-                }
                 .post {}
                 .build()
     }

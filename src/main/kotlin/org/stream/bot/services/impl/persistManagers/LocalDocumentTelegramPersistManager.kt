@@ -35,7 +35,7 @@ class LocalDocumentTelegramPersistManager {
 
     }
 
-    val callback = object: DownloadFileCallback<org.telegram.telegrambots.meta.api.objects.File>{
+    val callback = object : DownloadFileCallback<org.telegram.telegrambots.meta.api.objects.File> {
         override fun onResult(file: org.telegram.telegrambots.meta.api.objects.File?, output: File?) {
             TODO("Not yet implemented")
         }
@@ -45,13 +45,13 @@ class LocalDocumentTelegramPersistManager {
         }
     }
 
-    fun persistToStorage(update: Update, filename: String, booksList: ArrayList<FileInfo>){
+    fun persistToStorage(update: Update, filename: String, booksList: ArrayList<FileInfo>) {
         try {
             val localFile = File(filename)
             val receivedFile = downloadFileWithId(update.message.document.fileId)
-            var md ="";
+            var md = "";
             println(md)
-            receivedFile.inputStream().use{
+            receivedFile.inputStream().use {
                 md = DigestUtils.md5Hex(it).toUpperCase()
             }
             println(md)

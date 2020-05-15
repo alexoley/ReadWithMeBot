@@ -46,14 +46,13 @@ class AddBookCommandHandler : ICommandHandler {
             //val user = userService.getUserByIdAndSubscriber(update.message.from.id.toString(), Subscribers.TELEGRAM).awaitFirst()
             userService.getUserByIdAndSubscriber(update.message.from.id.toString(), Subscribers.TELEGRAM).subscribe(
                     Consumer { user ->
-                        if (user.fileList.size>=user.quantityBookLimit){
+                        if (user.fileList.size >= user.quantityBookLimit) {
                             //sendMessage.setText("You already reached your book limit.\uD83D\uDE14".botText())
                             //sendText="Your limit on the number of books is ${e.limit}.\nYou cannot exceed it."
                             sendMessage.setText(("Your book limit is ${user.quantityBookLimit}." +
                                     "\nAnd you have already reached it.\uD83D\uDE14" +
                                     "\nTry to reduce your list of books with /removebook").botText())
-                        }
-                        else{
+                        } else {
                             sendMessage.setText("Send me book. The book should be no more than 20 megabytes.".botText())
                                     .setReplyMarkup(KeyboardFactory.cancelButton())
                             //db.getMap<Any, Any>(BotConstants.CHAT_STATES)[ctx.chatId().toString()] = States.WAIT_FOR_BOOK
@@ -62,24 +61,22 @@ class AddBookCommandHandler : ICommandHandler {
                                     States.WAIT_FOR_BOOK.toString())
                         }
                     },
-                    Consumer {
-                        t ->
+                    Consumer { t ->
                         sendMessage.setText("Something went wrong on server side.\nTry this later.\uD83E\uDD15".botText())
                         logger.error(t.message)
                     }
-                    ,Runnable { bot.execute(sendMessage) }
+                    , Runnable { bot.execute(sendMessage) }
             )
         } catch (e: TelegramApiException) {
             e.printStackTrace()
         }
     }
-    
-    
+
 
     override fun firstReply(update: Update) {
         userService.getUserByIdAndSubscriber(update.message.from.id.toString(), Subscribers.TELEGRAM).subscribe(
                 Consumer { user ->
-                    if (user!=null){
+                    if (user != null) {
                         process(update, user)
                     }
                 },
@@ -97,7 +94,7 @@ class AddBookCommandHandler : ICommandHandler {
 
     private fun process(update: Update, monoUser: User) {
         val sendMessage: SendMessage = SendMessage().setChatId(AbilityUtils.getChatId(update))
-        var sendText : String?=""
+        var sendText: String? = ""
         try {
             //If document format not supports
             if (documentFormatExtractorList.stream()
@@ -108,7 +105,7 @@ class AddBookCommandHandler : ICommandHandler {
 
             logger.info("File size: ${update.message.document.fileSize}")
             //Send loading message if file more than 1 megabyte
-            if(update.message.document.fileSize>1024*1024){
+            if (update.message.document.fileSize > 1024 * 1024) {
                 val loadingMessage = "Loading file... Please, wait"
                 bot.execute(sendMessage
                         .setText(loadingMessage.botText())

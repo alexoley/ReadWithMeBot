@@ -44,7 +44,6 @@ class TextPartExtractorService {
         //header example: mylovelybook.pdf pages.1765-1768
         val messageSizeMinusHeader = (messageSize.toInt().minus(header.length.plus(7 + (numberOfPages.toString().length) * 2)))
 
-        //TODO: Maybe decrease text size to 4096/2=2048 or lower, that it can fit on screen
         //add new pages to list
         nextPages.add(Pair(page, documentFormatExtractor.extractTextFromDocumentPage(file, page).substring(position)))
         while (nextPages.asSequence()
@@ -80,7 +79,6 @@ class TextPartExtractorService {
         }
 
         fileInfo.lastSentPage=DocumentPosition(nextPages.last().first, position)
-        //TODO: Try do not return FileInfo, only text
         return header + nextPages.asSequence().map { e -> e.second }.reduce { e1, e2 -> e1 + e2 }
     }
 

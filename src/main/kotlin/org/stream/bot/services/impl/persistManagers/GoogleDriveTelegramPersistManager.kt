@@ -10,8 +10,8 @@ import org.springframework.stereotype.Service
 import org.stream.bot.Bot
 import org.stream.bot.entities.FileInfo
 import org.stream.bot.exceptions.DublicateBookException
+import org.stream.bot.services.AbstractTelegramPersistManager
 import org.stream.bot.services.IDocumentPersistManager
-import org.telegram.telegrambots.meta.api.methods.GetFile
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import java.io.ByteArrayOutputStream
@@ -21,7 +21,7 @@ import java.io.IOException
 
 @Service
 @Profile("production")
-class GoogleDrivePersistManager : IDocumentPersistManager {
+class GoogleDriveTelegramPersistManager : IDocumentPersistManager, AbstractTelegramPersistManager() {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -29,7 +29,7 @@ class GoogleDrivePersistManager : IDocumentPersistManager {
     lateinit var googleDriveService: Drive
 
     @Autowired
-    lateinit var bot: Bot
+    override lateinit var bot: Bot
 
     @Throws(TelegramApiException::class, DublicateBookException::class, IOException::class)
     override fun persistToStorage(update: Update, filenameGenerated: String, booksList: ArrayList<FileInfo>): FileInfo {
@@ -74,10 +74,5 @@ class GoogleDrivePersistManager : IDocumentPersistManager {
         if (responce.statusCode == 204)
             return true
         return false
-    }
-
-    @Throws(TelegramApiException::class)
-    private fun downloadTelegramFileWithId(fileId: String): org.telegram.telegrambots.meta.api.objects.File {
-        return bot.execute(GetFile().setFileId(fileId))
     }
 }

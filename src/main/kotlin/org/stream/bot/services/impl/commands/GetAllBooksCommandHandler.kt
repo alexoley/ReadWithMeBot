@@ -13,7 +13,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 
 @Service
-class GetAllBooksCommandHandler: ICommandHandler {
+class GetAllBooksCommandHandler : ICommandHandler {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -24,15 +24,15 @@ class GetAllBooksCommandHandler: ICommandHandler {
     lateinit var userService: IUserService
 
     override fun answer(update: Update) {
-        val user=userService.getUserByIdAndSubscriber(AbilityUtils.getChatId(update).toString(),
+        val user = userService.getUserByIdAndSubscriber(AbilityUtils.getChatId(update).toString(),
                 Subscribers.TELEGRAM).block()
-        val sendText: String?= if(user?.fileList.isNullOrEmpty())
+        val sendText: String? = if (user?.fileList.isNullOrEmpty())
             "You have no books...\nRun /addbook command to resolve it!"
         else
-            "Your \uD83D\uDCD6 list:\n\n"+
-            user?.fileList?.asSequence()
-                    ?.mapIndexed { index, fileInfo ->  "${index+1}. ${fileInfo.fileName}\n"}
-                    ?.reduce{acc, s -> acc+s}
+            "Your \uD83D\uDCD6 list:\n\n" +
+                    user?.fileList?.asSequence()
+                            ?.mapIndexed { index, fileInfo -> "${index + 1}. ${fileInfo.fileName}\n" }
+                            ?.reduce { acc, s -> acc + s }
 
         bot.execute(SendMessage()
                 .setText(sendText.botText())

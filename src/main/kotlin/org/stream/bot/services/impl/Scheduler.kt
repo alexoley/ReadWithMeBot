@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.stream.bot.services.IUserService
+import org.stream.bot.services.impl.commands.BookPartSenderService
 import java.util.function.Consumer
 
 @Service
@@ -16,7 +17,7 @@ class Scheduler {
     lateinit var userService: IUserService
 
     @Autowired
-    lateinit var bookPartSender: BookPartSender
+    lateinit var bookPartSenderService: BookPartSenderService
 
     companion object {
         private const val cronexpression = "0 0 19 * * *"
@@ -32,14 +33,12 @@ class Scheduler {
                 .subscribe(
                         Consumer {
                             it.fileList.filter { fileInfo -> fileInfo.stillReading }
-                                    .forEach(Consumer { fileInfo -> bookPartSender.sendMessageAndUpdate(fileInfo, it.id) })
+                                    .forEach(Consumer { fileInfo -> bookPartSenderService.sendMessageAndUpdate(fileInfo, it.id) })
                             userService.saveUser(it).subscribe()
                         },
-                        Consumer { t ->
-                            {
-                                logger.error(t.message)
-                                t.printStackTrace()
-                            }
+                        Consumer {
+                            logger.error(it.message)
+                            it.printStackTrace()
                         })
     }
 }

@@ -10,8 +10,8 @@ import org.stream.bot.Bot
 import org.stream.bot.entities.FileInfo
 import org.stream.bot.exceptions.DublicateBookException
 import org.stream.bot.exceptions.QuantityLimitBookException
+import org.stream.bot.services.AbstractTelegramPersistManager
 import org.stream.bot.services.IDocumentPersistManager
-import org.telegram.telegrambots.meta.api.methods.GetFile
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import java.io.File
@@ -24,12 +24,12 @@ import javax.annotation.PostConstruct
 @Primary
 @Service("localPersistManager")
 @Profile("local")
-class LocalDocumentTelegramPersistManagerWithInputStream : IDocumentPersistManager {
+class LocalDocumentTelegramPersistManagerWithInputStream : IDocumentPersistManager, AbstractTelegramPersistManager(){
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @Autowired
-    lateinit var bot: Bot
+    override lateinit var bot: Bot
 
     @Value("\${local.books.directory}")
     lateinit var bookDirectory: String
@@ -48,9 +48,9 @@ class LocalDocumentTelegramPersistManagerWithInputStream : IDocumentPersistManag
         val localPath = bookDirectory + "/" + filenameGenerated
         val localFile = File(localPath)
         val fileChecksum = writeInputStreamToFileAndGetItChecksum(telegramFileStream, localFile)
-        logger.debug("Digest: ${fileChecksum}")
+        logger.debug("Digest: $fileChecksum")
         //Check if book already present in user book list by its checksum
-        if (booksList.stream()?.anyMatch { fileInfo -> fileInfo.checksum.equals(fileChecksum,ignoreCase = true) }!!) {
+        if (booksList.stream()?.anyMatch { fileInfo -> fileInfo.checksum.equals(fileChecksum, ignoreCase = true) }!!) {
             localFile.delete()
             throw DublicateBookException()
         }
@@ -71,12 +71,6 @@ class LocalDocumentTelegramPersistManagerWithInputStream : IDocumentPersistManag
     override fun removeFromStorage(fileInfo: FileInfo): Boolean {
         return File(fileInfo.relativePath).delete();
     }
-
-    @Throws(TelegramApiException::class)
-    private fun downloadTelegramFileWithId(fileId: String): org.telegram.telegrambots.meta.api.objects.File {
-        return bot.execute(GetFile().setFileId(fileId))
-    }
-
 
     private fun writeInputStreamToFileAndGetItChecksum(inputStream: InputStream, localFile: File): String {
         val localFileOS = localFile.outputStream()

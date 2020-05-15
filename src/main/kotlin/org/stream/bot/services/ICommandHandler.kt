@@ -5,8 +5,6 @@ import org.telegram.telegrambots.meta.api.objects.Update
 const val MARKDOWN_ENABLED = false
 
 interface ICommandHandler {
-    //TODO: Refactor: change methods to: process->answer, firstReply, secondReply, thirdReply
-    // which can relieve duty to send messages from Bot class
 
     fun answer(update: Update)
 

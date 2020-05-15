@@ -32,24 +32,21 @@ class RemoveBookCommandHandler : ICommandHandler {
     lateinit var persistManager: IDocumentPersistManager
 
     override fun answer(update: Update) {
-        //TODO: Refactor this method
         userService.getUserByIdAndSubscriber(update.message.from.id.toString(), Subscribers.TELEGRAM).subscribe(
                 Consumer { user ->
                     if (user != null) {
+                        val sendMessage = SendMessage()
+                                .setChatId(AbilityUtils.getChatId(update))
+                                .enableMarkdown(MARKDOWN_ENABLED)
                         if (user.fileList.isEmpty()) {
-                            bot.execute(SendMessage()
-                                    .setText("You have no books...\nRun /addbook command to resolve it!".botText())
-                                    .setChatId(AbilityUtils.getChatId(update))
-                                    .enableMarkdown(MARKDOWN_ENABLED))
+                            sendMessage.setText("You have no books...\nRun /addbook command to resolve it!".botText())
                         } else {
-                            bot.execute(SendMessage()
-                                    .setText("What book do you want to delete?".botText())
-                                    .setChatId(AbilityUtils.getChatId(update))
+                            sendMessage.setText("What book do you want to delete?".botText())
                                     .setReplyMarkup(KeyboardFactory.inlineBookDeleteKeyboardFromList(user.fileList))
-                                    .enableMarkdown(MARKDOWN_ENABLED))
                             bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES, AbilityUtils.getChatId(update).toString(),
                                     States.WAIT_FOR_REMOVE.toString())
                         }
+                        bot.execute(sendMessage)
                     }
                 },
                 Consumer { e -> logger.error(e.message) }
@@ -62,9 +59,9 @@ class RemoveBookCommandHandler : ICommandHandler {
                 Consumer { user ->
                     if (user != null) {
                         val removedFileInfo = user.fileList.find { fileInfo -> fileInfo.checksum.equals(update.callbackQuery.data) }
-                        if (removedFileInfo!=null && user.fileList.remove(removedFileInfo)) {
+                        if (removedFileInfo != null && user.fileList.remove(removedFileInfo)) {
                             userService.saveUser(user).subscribe {
-                                if(persistManager.removeFromStorage(removedFileInfo)){
+                                if (persistManager.removeFromStorage(removedFileInfo)) {
                                     bot.execute(SendMessage()
                                             .setText("You successfully removed ${removedFileInfo?.fileName}.".botText())
                                             .setChatId(AbilityUtils.getChatId(update))

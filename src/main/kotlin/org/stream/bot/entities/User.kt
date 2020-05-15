@@ -12,3 +12,4 @@ data class User(@Id val id: String,
                 val subscriber: Subscribers,
                 var quantityBookLimit: Int = 3,
                 val fileList: ArrayList<FileInfo> = arrayListOf())
+//TODO: Add location, timezone and ?language?
