@@ -9,7 +9,7 @@ interface IDocumentPersistManager{
     //TODO: Add function remove file from storage
     fun persistToStorage(update: Update, filenameGenerated: String, booksList: ArrayList<FileInfo>): FileInfo
 
-    fun uploadFromStorage(fileInfo: FileInfo): File
+    fun downloadFromStorage(fileInfo: FileInfo): File
 
     fun removeFromStorage(fileInfo: FileInfo): Boolean
 }

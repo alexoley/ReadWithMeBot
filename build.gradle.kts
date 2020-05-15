@@ -28,12 +28,19 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.4")
+	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.3.4")
 	testImplementation("org.springframework.boot:spring-boot-starter-test") {
 		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
 	}
 	implementation("org.telegram:telegrambots-abilities:4.7")
 	implementation("org.telegram:telegrambots-spring-boot-starter:4.1.2")
 	implementation("org.apache.pdfbox:pdfbox:2.0.19")
+	//dependencies for google drive
+	implementation("com.google.api-client:google-api-client:1.30.9"){
+		exclude(group = "com.google.guava", module="guava-jdk5")
+	}
+	implementation("com.google.oauth-client:google-oauth-client-jetty:1.30.6")
+	implementation("com.google.apis:google-api-services-drive:v3-rev197-1.25.0")
 }
 
 tasks.withType<Test> {

@@ -8,7 +8,8 @@ import java.io.IOException
 
 interface IDocumentFormatExtractor {
 
-    fun getDocumentFormat(): String
+    //Must return format as in telegram
+    fun getDocumentMimeType(): String
 
     @Throws(IOException::class)
     fun extractTextFromDocumentPage(file: File, page: Int): String

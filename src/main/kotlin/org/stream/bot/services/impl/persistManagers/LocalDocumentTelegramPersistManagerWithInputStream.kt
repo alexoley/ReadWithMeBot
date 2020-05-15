@@ -1,4 +1,4 @@
-package org.stream.bot.services.impl
+package org.stream.bot.services.impl.persistManagers
 
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -64,12 +64,12 @@ class LocalDocumentTelegramPersistManagerWithInputStream : IDocumentPersistManag
 
     }
 
-    override fun uploadFromStorage(fileInfo: FileInfo): File {
+    override fun downloadFromStorage(fileInfo: FileInfo): File {
         return File(fileInfo.relativePath)
     }
 
     override fun removeFromStorage(fileInfo: FileInfo): Boolean {
-        TODO("Not yet implemented")
+        return File(fileInfo.relativePath).delete();
     }
 
     @Throws(TelegramApiException::class)

@@ -1,4 +1,4 @@
-package org.stream.bot.services.impl.document.extractors
+package org.stream.bot.services.impl
 
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.stream.bot.entities.DocumentPosition
 import org.stream.bot.entities.FileInfo
+import org.stream.bot.exceptions.NoSuchDocumentFormatExtractor
 import org.stream.bot.services.IDocumentFormatExtractor
 import org.stream.bot.services.IDocumentPersistManager
 import java.util.function.Predicate
@@ -16,18 +17,26 @@ class TextPartExtractorService {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @Autowired
-    lateinit var pdfFormatExtractor: IDocumentFormatExtractor
+    constructor(listOfDocumentFormatExtractors: List<IDocumentFormatExtractor>){
+        documentFormatExtractors = listOfDocumentFormatExtractors.asSequence().map { it.getDocumentMimeType() to it }.toMap()
+    }
+
+    //map of mime types opposite document format extractor implementations
+    var documentFormatExtractors : Map<String, IDocumentFormatExtractor>
 
     @Autowired
     lateinit var persistManager: IDocumentPersistManager
 
-    @Value("\${bot.message.max-size}")
+    @Value("\${bot.message.size}")
     lateinit var messageSize: String
 
 
     fun getNextTextPartAndPosition(fileInfo: FileInfo): String {
-        val file = persistManager.uploadFromStorage(fileInfo)
-        val numberOfPages = pdfFormatExtractor.numberOfPages(file)
+        val documentFormatExtractor = documentFormatExtractors.get(fileInfo.mimeType)
+        if (documentFormatExtractor==null)
+            throw NoSuchDocumentFormatExtractor()
+        val file = persistManager.downloadFromStorage(fileInfo)
+        val numberOfPages = documentFormatExtractor.numberOfPages(file)
         var position = fileInfo.lastSentPage.letterPosition
         var page = fileInfo.lastSentPage.page
         var nextPages = mutableListOf<Pair<Int, String>>()
@@ -37,12 +46,12 @@ class TextPartExtractorService {
 
         //TODO: Maybe decrease text size to 4096/2=2048 or lower, that it can fit on screen
         //add new pages to list
-        nextPages.add(Pair(page, pdfFormatExtractor.extractTextFromDocumentPage(file, page).substring(position)))
+        nextPages.add(Pair(page, documentFormatExtractor.extractTextFromDocumentPage(file, page).substring(position)))
         while (nextPages.asSequence()
                         .map { it.second.length }
                         .reduce { e1, e2 -> e1 + e2 } < messageSizeMinusHeader && page < numberOfPages) {
             page++
-            nextPages.add(Pair(page, pdfFormatExtractor.extractTextFromDocumentPage(file, page)))
+            nextPages.add(Pair(page, documentFormatExtractor.extractTextFromDocumentPage(file, page)))
         }
 
 
@@ -104,17 +113,4 @@ class TextPartExtractorService {
                 .or(it.endsWith("!\n"))
                 .or(it.endsWith("?\n"))).not()
     }
-
-    /*fun MutableList<Pair<Int, String>>.reduceToSize2(size: Int) : MutableList<Pair<Int, String>> =
-            when{
-                this.lastOrNull()==null -> this
-                this.last().second.isEmpty() -> this.subList(0,this.size-1).reduceToSize2(size)
-                this.last().second.endsWith(".")
-                        .and(this.asSequence().map { it.second.length }.reduce{e1, e2 -> e1 + e2}>size).not()
-                -> {this.subList(0,this.size-1).add(Pair(this.last().first,this.last().second.dropLastWhile { checkStopSymbol.test(this.last().second)
-                        .or(this.asSequence().map { it.second.length }.reduce{e1, e2 -> e1 + e2}>size)}))
-                    this
-                }//change
-                else -> this
-            }*/
 }

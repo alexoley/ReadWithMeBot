@@ -14,7 +14,7 @@ class PdfFormatExtractor: IDocumentFormatExtractor {
 
     val format: String = "application/pdf"
 
-    override fun getDocumentFormat(): String {
+    override fun getDocumentMimeType(): String {
         return format;
     }
 

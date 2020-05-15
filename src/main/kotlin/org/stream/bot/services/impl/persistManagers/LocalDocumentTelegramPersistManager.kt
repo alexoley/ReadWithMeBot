@@ -1,30 +1,19 @@
-package org.stream.bot.services.impl
+package org.stream.bot.services.impl.persistManagers
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.FileUtils
-import org.jetbrains.annotations.NotNull
-import org.jetbrains.annotations.Nullable
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.annotation.Primary
-import org.springframework.stereotype.Service
 import org.stream.bot.Bot
 import org.stream.bot.entities.FileInfo
-import org.stream.bot.services.IDocumentPersistManager
-import org.telegram.abilitybots.api.sender.MessageSender
 import org.telegram.telegrambots.meta.api.methods.GetFile
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import org.telegram.telegrambots.meta.updateshandlers.DownloadFileCallback
 import java.io.File
 import java.io.IOException
-import java.io.InputStream
 import java.lang.Exception
-import java.nio.file.Files
-import java.security.DigestInputStream
-import java.security.MessageDigest
-import java.util.concurrent.CompletableFuture
 import javax.annotation.PostConstruct
 
 @Deprecated(message = "Not implemented", level = DeprecationLevel.WARNING)

@@ -10,6 +10,7 @@ import org.stream.bot.utils.Subscribers
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import kotlinx.coroutines.*
+import kotlinx.coroutines.reactive.awaitFirst
 import org.slf4j.LoggerFactory
 import java.util.function.Consumer
 

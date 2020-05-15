@@ -62,3 +62,7 @@ bookshelf/
 
 ### Bot local files###
 Read With Me*
+credentials.json
+*.sh
+Read*
+/tokens/

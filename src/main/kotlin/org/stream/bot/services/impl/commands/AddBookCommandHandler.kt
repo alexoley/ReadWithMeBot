@@ -1,13 +1,11 @@
 package org.stream.bot.services.impl.commands
 
-import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.stream.bot.Bot
 import org.stream.bot.entities.User
 import org.stream.bot.exceptions.DublicateBookException
-import org.stream.bot.exceptions.QuantityLimitBookException
 import org.stream.bot.services.*
 import org.stream.bot.utils.BotConstants
 import org.stream.bot.utils.KeyboardFactory
@@ -45,9 +43,10 @@ class AddBookCommandHandler : ICommandHandler {
                     .enableMarkdown(MARKDOWN_ENABLED)
 
             //Check if book limit not reached
+            //val user = userService.getUserByIdAndSubscriber(update.message.from.id.toString(), Subscribers.TELEGRAM).awaitFirst()
             userService.getUserByIdAndSubscriber(update.message.from.id.toString(), Subscribers.TELEGRAM).subscribe(
                     Consumer { user ->
-                        if (user.fileList.count()>=user.quantityBookLimit){
+                        if (user.fileList.size>=user.quantityBookLimit){
                             //sendMessage.setText("You already reached your book limit.\uD83D\uDE14".botText())
                             //sendText="Your limit on the number of books is ${e.limit}.\nYou cannot exceed it."
                             sendMessage.setText(("Your book limit is ${user.quantityBookLimit}." +
@@ -102,7 +101,7 @@ class AddBookCommandHandler : ICommandHandler {
         try {
             //If document format not supports
             if (documentFormatExtractorList.stream()
-                            .noneMatch { it.getDocumentFormat().equals(update.message.document.mimeType) }) {
+                            .noneMatch { it.getDocumentMimeType().equals(update.message.document.mimeType) }) {
                 sendText = "I do not yet support this document format.\uD83D\uDE36"
                 return
             }
@@ -119,7 +118,7 @@ class AddBookCommandHandler : ICommandHandler {
             val filenameGenerated = System.currentTimeMillis().toString() + "_" + update.message.document.fileName
             val fileInfo = documentPersistManager.persistToStorage(update, filenameGenerated, monoUser.fileList)
             monoUser.fileList.add(fileInfo)
-            userService.saveUser(monoUser).block()
+            userService.saveUser(monoUser).subscribe()
             sendText = "You've send me " +
                     update.message.document.fileName +
                     ". I wish you an exciting read.\uD83D\uDE0C"

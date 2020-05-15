@@ -1,14 +1,16 @@
 package org.stream.bot
 
+import com.google.api.services.drive.Drive
+import com.google.api.services.drive.model.File
+import com.google.api.services.drive.model.FileList
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import org.stream.bot.entities.User
 import org.stream.bot.services.ICommandHandler
-import org.stream.bot.services.IDocumentFormatExtractor
 import org.stream.bot.services.IUserService
-import org.stream.bot.services.impl.SchedulerSender
+import org.stream.bot.services.impl.BookPartSender
+import org.stream.bot.services.impl.Scheduler
 import org.stream.bot.utils.BotConstants
 import org.stream.bot.utils.KeyboardFactory
 import org.stream.bot.utils.States
@@ -22,9 +24,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import java.util.Objects.nonNull
 import java.util.function.Consumer
 import java.util.function.Predicate
-import kotlinx.coroutines.*
-import org.stream.bot.services.impl.commands.StartCommandHandler
-import kotlin.coroutines.coroutineContext
+import kotlin.coroutines.CoroutineContext
 
 
 @Component
@@ -64,8 +64,24 @@ class Bot : AbilityBot {
     @Autowired
     lateinit var removeBookCommandHandler: ICommandHandler
 
+    //TODO: Delete from here
     @Autowired
-    lateinit var schedulerSender: SchedulerSender
+    lateinit var scheduler: Scheduler
+
+    //TODO: Delete from here
+    @Autowired
+    lateinit var userService: IUserService
+
+    //TODO: Delete from here
+    @Autowired
+    lateinit var bookPartSender: BookPartSender
+
+    //TODO: Delete from here
+    @Autowired
+    lateinit var googleDrive: Drive
+
+    @Autowired
+    lateinit var cc: CoroutineContext
 
     fun String?.makeBold(): String {
         return "*$this*"
@@ -82,9 +98,7 @@ class Bot : AbilityBot {
                 .input(0)
                 .privacy(Privacy.PUBLIC)
                 .locality(Locality.USER)
-                .action { ctx: MessageContext ->
-                    startCommandHandler.answer(ctx.update())
-                }
+                .action { startCommandHandler.answer(it.update()) }
                 .post {}
                 .build()
     }
@@ -96,9 +110,7 @@ class Bot : AbilityBot {
                 .input(0)
                 .privacy(Privacy.PUBLIC)
                 .locality(Locality.USER)
-                .action { ctx: MessageContext ->
-                    addBookCommandHandler.answer(ctx.update())
-                }
+                .action { addBookCommandHandler.answer(it.update()) }
                 .post {}
                 .build()
     }
@@ -147,9 +159,7 @@ class Bot : AbilityBot {
                 .input(0)
                 .privacy(Privacy.PUBLIC)
                 .locality(Locality.USER)
-                .action { ctx: MessageContext ->
-                    removeBookCommandHandler.answer(ctx.update())
-                }
+                .action { removeBookCommandHandler.answer(it.update()) }
                 .post {}
                 .build()
     }
@@ -164,6 +174,25 @@ class Bot : AbilityBot {
         return Reply.of(action, Flag.CALLBACK_QUERY)
     }
 
+    fun replyToGetNextCallback(): Reply? {
+        //TODO: Move to another class(refactor)
+        val action = Consumer { update: Update ->
+            userService.getUserByIdAndSubscriber(update.callbackQuery.from.id.toString(), Subscribers.TELEGRAM).subscribe(
+                    Consumer { user ->
+                        val callback = update.callbackQuery.data.subSequence(8, update.callbackQuery.data.length)
+                        if (user.fileList.asSequence().filter { it.stillReading }.any { it.checksum == callback }) {
+                            val fileinfo = user.fileList.asSequence()
+                                    .first { fileInfo -> fileInfo.checksum.equals(callback) }
+                            bookPartSender.sendMessageAndUpdate(fileinfo, getChatId(update).toString())
+                        }
+                        userService.saveUser(user).subscribe()
+                    },
+                    Consumer { e -> logger.error(e.message) }
+            )
+        }
+        return Reply.of(action, Flag.CALLBACK_QUERY, Predicate { update -> update.callbackQuery.data.startsWith("getnext:") })
+    }
+
     fun getAllBooks(): Ability {
         return Ability.builder()
                 .name("mybooks")
@@ -171,9 +200,7 @@ class Bot : AbilityBot {
                 .input(0)
                 .privacy(Privacy.PUBLIC)
                 .locality(Locality.USER)
-                .action { ctx: MessageContext ->
-                    getAllBooksCommandHandler.answer(ctx.update())
-                }
+                .action { getAllBooksCommandHandler.answer(it.update()) }
                 .post {}
                 .build()
     }
@@ -185,48 +212,20 @@ class Bot : AbilityBot {
                 .input(0)
                 .privacy(Privacy.ADMIN)
                 .locality(Locality.USER)
-                .action { ctx: MessageContext ->
-                    /*try {
-                        val filepath=ctx.arguments()[0]
-                        logger.info(filepath)
-                        val startPage=ctx.arguments()[1]
-                        logger.info(startPage)
-                        val startLetterPosition=ctx.arguments()[2]
-                        logger.info(startLetterPosition)
-
-
-                        val file = File(filepath)
-                        val pair = pdfFormatExtractor.tempGetNextTextPartAndPosition(file,startPage.toInt(),startLetterPosition.toInt())
-                        logger.info(pair.second.toString())
-                        this.execute(SendMessage().setText(pair.first.makeBold())
-                                .enableMarkdown(true)
-                                .disableWebPagePreview()
-                                .setChatId(ctx.chatId()))
-                    }
-                    catch (e: TelegramApiException){
-                        e.printStackTrace()
-                    }
-                    catch (e: IOException){
-                        e.printStackTrace()
-                    }*/
-                    schedulerSender.scheduler()
-                }
+                .action { scheduler.scheduler() }
                 .post {}
                 .build()
     }
 
-    fun me(): Ability {
+    fun google(): Ability {
         return Ability.builder()
-                .name("me")
+                .name("google")
                 .info("test")
                 .input(0)
                 .privacy(Privacy.ADMIN)
                 .locality(Locality.USER)
-                .action { ctx: MessageContext ->
-                    this.execute(SendMessage().setText("```sdkjfdslk\\*jfkdsjfk```")
-                            .enableMarkdownV2(true)
-                            .disableWebPagePreview()
-                            .setChatId(ctx.chatId()))
+                .action {
+                    googleDrive.files().create(File())
                 }
                 .post {}
                 .build()

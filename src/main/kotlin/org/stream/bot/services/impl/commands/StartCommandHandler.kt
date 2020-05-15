@@ -1,5 +1,6 @@
 package org.stream.bot.services.impl.commands
 
+import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service

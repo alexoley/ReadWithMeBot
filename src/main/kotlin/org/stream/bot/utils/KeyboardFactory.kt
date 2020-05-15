@@ -31,9 +31,22 @@ class KeyboardFactory {
 
         fun inlineBookDeleteKeyboardFromList(bookList: List<FileInfo>): ReplyKeyboard {
             val rowsInline: List<List<InlineKeyboardButton>> =
-            bookList.map { fileInfo -> InlineKeyboardButton().setText(fileInfo.fileName).setCallbackData(fileInfo.checksum) }
-                    .map { inlineKeyboardButton -> listOf(inlineKeyboardButton) }
-                    .toCollection(ArrayList())
+                    bookList.map { fileInfo -> InlineKeyboardButton().setText(fileInfo.fileName).setCallbackData(fileInfo.checksum) }
+                            .map { inlineKeyboardButton -> listOf(inlineKeyboardButton) }
+                            .toCollection(ArrayList())
+
+            val replyKeyboardMarkup = InlineKeyboardMarkup()
+            replyKeyboardMarkup.setKeyboard(rowsInline)
+            return replyKeyboardMarkup;
+        }
+
+        fun inlineBookGiveMoreKeyboard(fileInfo: FileInfo): ReplyKeyboard {
+            val text = if (fileInfo.fileName.length > 10)
+                "${fileInfo.fileName.subSequence(0, 10)}...\uD83D\uDC49"
+            else
+                "${fileInfo.fileName}...\uD83D\uDC49"
+            val button = InlineKeyboardButton().setText(text).setCallbackData("getnext:${fileInfo.checksum}")
+            val rowsInline: List<List<InlineKeyboardButton>> = mutableListOf(listOf<InlineKeyboardButton>(button));
 
             val replyKeyboardMarkup = InlineKeyboardMarkup()
             replyKeyboardMarkup.setKeyboard(rowsInline)
