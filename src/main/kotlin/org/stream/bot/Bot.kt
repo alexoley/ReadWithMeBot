@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.stream.bot.services.ICommandHandler
 import org.stream.bot.services.IUserService
+import org.stream.bot.services.MARKDOWN_ENABLED
 import org.stream.bot.services.impl.commands.BookPartSenderService
 import org.stream.bot.services.impl.Scheduler
 import org.stream.bot.services.impl.commands.CancelCommandHandler
@@ -162,6 +163,34 @@ class Bot : AbilityBot {
                 .privacy(Privacy.PUBLIC)
                 .locality(Locality.USER)
                 .action { getAllBooksCommandHandler.answer(it.update()) }
+                .post {}
+                .build()
+    }
+
+    fun about(): Ability {
+        return Ability.builder()
+                .name("about")
+                .info("Bot description")
+                .input(0)
+                .privacy(Privacy.PUBLIC)
+                .locality(Locality.USER)
+                .action { this.execute(SendMessage()
+                        .setChatId(it.chatId())
+                        .setText(AbilityUtils.getLocalizedMessage("bot.description", it.user().languageCode)))}
+                .post {}
+                .build()
+    }
+
+    fun help(): Ability {
+        return Ability.builder()
+                .name("help")
+                .info("Bot commands description")
+                .input(0)
+                .privacy(Privacy.PUBLIC)
+                .locality(Locality.USER)
+                .action { this.execute(SendMessage()
+                        .setChatId(it.chatId())
+                        .setText(AbilityUtils.getLocalizedMessage("bot.help", it.user().languageCode)))}
                 .post {}
                 .build()
     }
