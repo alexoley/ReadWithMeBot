@@ -17,9 +17,9 @@ class KeyboardFactory {
             return ReplyKeyboardRemove()
         }
 
-        fun cancelButton(): ReplyKeyboard {
+        fun cancelButton(keyword: String): ReplyKeyboard {
             val keyboardRow = KeyboardRow();
-            keyboardRow.add("Cancel")
+            keyboardRow.add(keyword)
             val keyboardRowList = listOf(keyboardRow)
             val replyKeyboardMarkup = ReplyKeyboardMarkup()
             replyKeyboardMarkup

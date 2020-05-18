@@ -9,6 +9,8 @@ import org.stream.bot.utils.BotConstants
 import org.stream.bot.utils.KeyboardFactory
 import org.stream.bot.utils.States
 import org.telegram.abilitybots.api.util.AbilityUtils
+import org.telegram.abilitybots.api.util.AbilityUtils.getLocalizedMessage
+import org.telegram.abilitybots.api.util.AbilityUtils.getUser
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
@@ -30,7 +32,8 @@ class CancelCommandHandler : ICommandHandler {
                         AbilityUtils.getChatId(update).toString(),
                         States.NOT_WAITING.toString())
                 bot.execute(SendMessage()
-                        .setText("Action canceled.".botText())
+                        .setText(getLocalizedMessage("cancel.command.action.canceled",
+                                getUser(update).languageCode).botText())
                         .enableMarkdown(true)
                         .setChatId(AbilityUtils.getChatId(update))
                         .setReplyMarkup(KeyboardFactory.removeKeyboard()))

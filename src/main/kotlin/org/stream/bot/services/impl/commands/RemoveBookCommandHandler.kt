@@ -13,6 +13,8 @@ import org.stream.bot.utils.KeyboardFactory
 import org.stream.bot.utils.States
 import org.stream.bot.utils.Subscribers
 import org.telegram.abilitybots.api.util.AbilityUtils
+import org.telegram.abilitybots.api.util.AbilityUtils.getLocalizedMessage
+import org.telegram.abilitybots.api.util.AbilityUtils.getUser
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 import java.util.function.Consumer
@@ -39,9 +41,11 @@ class RemoveBookCommandHandler : ICommandHandler {
                                 .setChatId(AbilityUtils.getChatId(update))
                                 .enableMarkdown(MARKDOWN_ENABLED)
                         if (user.fileList.isEmpty()) {
-                            sendMessage.setText("You have no books...\nRun /addbook command to resolve it!".botText())
+                            sendMessage.setText(getLocalizedMessage("remove.book.command.have.no.books",
+                                    getUser(update).languageCode).botText())
                         } else {
-                            sendMessage.setText("What book do you want to delete?".botText())
+                            sendMessage.setText(getLocalizedMessage("remove.book.command.what.to.delete",
+                                    getUser(update).languageCode).botText())
                                     .setReplyMarkup(KeyboardFactory.inlineBookDeleteKeyboardFromList(user.fileList))
                             bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES, AbilityUtils.getChatId(update).toString(),
                                     States.WAIT_FOR_REMOVE.toString())
@@ -63,7 +67,8 @@ class RemoveBookCommandHandler : ICommandHandler {
                             userService.saveUser(user).subscribe {
                                 if (persistManager.removeFromStorage(removedFileInfo)) {
                                     bot.execute(SendMessage()
-                                            .setText("You successfully removed ${removedFileInfo?.fileName}.".botText())
+                                            .setText(getLocalizedMessage("remove.book.command.success.remove",
+                                                    getUser(update).languageCode,removedFileInfo?.fileName).botText())
                                             .setChatId(AbilityUtils.getChatId(update))
                                             .enableMarkdown(MARKDOWN_ENABLED))
                                 }

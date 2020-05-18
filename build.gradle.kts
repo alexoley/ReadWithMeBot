@@ -41,6 +41,8 @@ dependencies {
 	}
 	implementation("com.google.oauth-client:google-oauth-client-jetty:1.30.6")
 	implementation("com.google.apis:google-api-services-drive:v3-rev197-1.25.0")
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	implementation("org.springframework.boot:spring-boot-starter-webflux")
 }
 
 tasks.withType<Test> {

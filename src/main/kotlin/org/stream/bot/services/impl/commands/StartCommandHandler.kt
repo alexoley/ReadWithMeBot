@@ -11,6 +11,7 @@ import org.stream.bot.services.IUserService
 import org.stream.bot.services.MARKDOWN_ENABLED
 import org.stream.bot.utils.Subscribers
 import org.telegram.abilitybots.api.util.AbilityUtils
+import org.telegram.abilitybots.api.util.AbilityUtils.*
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
@@ -34,12 +35,11 @@ class StartCommandHandler: ICommandHandler {
                     firstName = update.message.from.firstName,
                     lastName = update.message.from.lastName,
                     nickname = update.message.from.userName))
-            val text = "It’s nice to meet you, ${update.message.from.firstName}!\uD83D\uDE0A\n" +
-                    "Welcome to ReadWithMe Bot. I'm here to help you read books\n" +
-                    "I'll send you the part of book each day, that you'd like to read.\uD83D\uDCD6"
+            val text = getLocalizedMessage("start.command.answer",
+                    getUser(update).languageCode, update.message.from.firstName)
             bot.execute(SendMessage().setText(text.botText())
                     .enableMarkdown(MARKDOWN_ENABLED)
-                    .setChatId(AbilityUtils.getChatId(update)))
+                    .setChatId(getChatId(update)))
             //TODO: Good morning/Good afternoon/Good evening
         } catch (e: TelegramApiException) {
 

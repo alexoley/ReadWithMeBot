@@ -10,6 +10,6 @@ data class User(@Id val id: String,
                 val lastName: String? = "",
                 val nickname: String? = "",
                 val subscriber: Subscribers,
-                var quantityBookLimit: Int = 3,
+                var quantityBookLimit: Int = 2,
                 val fileList: ArrayList<FileInfo> = arrayListOf())
 //TODO: Add location, timezone and ?language?

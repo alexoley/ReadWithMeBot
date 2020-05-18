@@ -16,6 +16,7 @@ import org.stream.bot.utils.KeyboardFactory
 import org.stream.bot.utils.States
 import org.telegram.abilitybots.api.bot.AbilityBot
 import org.telegram.abilitybots.api.objects.*
+import org.telegram.abilitybots.api.util.AbilityUtils
 import org.telegram.abilitybots.api.util.AbilityUtils.getChatId
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
@@ -120,7 +121,8 @@ class Bot : AbilityBot {
 
     fun cancelSending(): Reply {
         val action = Consumer { update: Update -> cancelCommandHandler.answer(update) }
-        return Reply.of(action, Flag.TEXT, Predicate { update -> update.message.text.equals("Cancel") })
+        return Reply.of(action, Flag.TEXT, Predicate { update -> update.message.text.equals(AbilityUtils.getLocalizedMessage("cancel",
+                AbilityUtils.getUser(update).languageCode)) })
     }
 
 

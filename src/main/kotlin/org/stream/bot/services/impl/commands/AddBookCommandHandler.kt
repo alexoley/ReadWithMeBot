@@ -12,6 +12,8 @@ import org.stream.bot.utils.KeyboardFactory
 import org.stream.bot.utils.States
 import org.stream.bot.utils.Subscribers
 import org.telegram.abilitybots.api.util.AbilityUtils
+import org.telegram.abilitybots.api.util.AbilityUtils.getLocalizedMessage
+import org.telegram.abilitybots.api.util.AbilityUtils.getUser
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
@@ -49,12 +51,13 @@ class AddBookCommandHandler : ICommandHandler {
                         if (user.fileList.size >= user.quantityBookLimit) {
                             //sendMessage.setText("You already reached your book limit.\uD83D\uDE14".botText())
                             //sendText="Your limit on the number of books is ${e.limit}.\nYou cannot exceed it."
-                            sendMessage.setText(("Your book limit is ${user.quantityBookLimit}." +
-                                    "\nAnd you have already reached it.\uD83D\uDE14" +
-                                    "\nTry to reduce your list of books with /removebook").botText())
+                            sendMessage.setText(getLocalizedMessage("addbook.command.book.limit.exceeded",
+                                    getUser(update).languageCode, user.quantityBookLimit).botText())
                         } else {
-                            sendMessage.setText("Send me book. The book should be no more than 20 megabytes.".botText())
-                                    .setReplyMarkup(KeyboardFactory.cancelButton())
+                            sendMessage.setText(getLocalizedMessage("addbook.command.send.me.book",
+                                    getUser(update).languageCode).botText())
+                                    .setReplyMarkup(KeyboardFactory.cancelButton(getLocalizedMessage("cancel",
+                                            getUser(update).languageCode)))
                             //db.getMap<Any, Any>(BotConstants.CHAT_STATES)[ctx.chatId().toString()] = States.WAIT_FOR_BOOK
                             bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES,
                                     AbilityUtils.getChatId(update).toString(),
@@ -62,7 +65,8 @@ class AddBookCommandHandler : ICommandHandler {
                         }
                     },
                     Consumer { t ->
-                        sendMessage.setText("Something went wrong on server side.\nTry this later.\uD83E\uDD15".botText())
+                        sendMessage.setText(getLocalizedMessage("error.message.something.wrong.on.server",
+                                getUser(update).languageCode).botText())
                         logger.error(t.message)
                     }
                     , Runnable { bot.execute(sendMessage) }
@@ -99,14 +103,15 @@ class AddBookCommandHandler : ICommandHandler {
             //If document format not supports
             if (documentFormatExtractorList.stream()
                             .noneMatch { it.getDocumentMimeType().equals(update.message.document.mimeType) }) {
-                sendText = "I do not yet support this document format.\uD83D\uDE36"
+                sendText = getLocalizedMessage("addbook.command.not.support.document.format",
+                        getUser(update).languageCode)
                 return
             }
 
-            logger.info("File size: ${update.message.document.fileSize}")
             //Send loading message if file more than 1 megabyte
             if (update.message.document.fileSize > 1024 * 1024) {
-                val loadingMessage = "Loading file... Please, wait"
+                val loadingMessage = getLocalizedMessage("addbook.command.loading.file",
+                        getUser(update).languageCode)
                 bot.execute(sendMessage
                         .setText(loadingMessage.botText())
                         .setReplyMarkup(KeyboardFactory.removeKeyboard())
@@ -116,22 +121,25 @@ class AddBookCommandHandler : ICommandHandler {
             val fileInfo = documentPersistManager.persistToStorage(update, filenameGenerated, monoUser.fileList)
             monoUser.fileList.add(fileInfo)
             userService.saveUser(monoUser).subscribe()
-            sendText = "You've send me " +
-                    update.message.document.fileName +
-                    ". I wish you an exciting read.\uD83D\uDE0C"
+            sendText = getLocalizedMessage("addbook.command.successful.book.addition",
+                    getUser(update).languageCode, update.message.document.fileName)
         } catch (e: DublicateBookException) {
-            sendText = "You have already added this book.\uD83E\uDD28"
+            sendText = getLocalizedMessage("addbook.command.dublicate.book",
+                    getUser(update).languageCode)
         } catch (e: TelegramApiException) {
             if (update.message?.document?.fileSize!! > BotConstants.MAX_TELEGRAM_FILE_SIZE) {
-                sendText = "Book size is too large.\uD83D\uDE16"
+                sendText = getLocalizedMessage("addbook.command.too.large.book",
+                        getUser(update).languageCode)
             }
             e.printStackTrace()
         } catch (e: IOException) {
-            sendText = "Something went wrong on server side.\nTry this later.\uD83E\uDD15"
+            sendText = getLocalizedMessage("error.message.something.wrong.on.server",
+                    getUser(update).languageCode)
             logger.error("Error in file copying(saving)")
             e.printStackTrace()
         } catch (e: NullPointerException) {
-            sendText = "Something went wrong on server side.\nTry this later.\uD83E\uDD15"
+            sendText = getLocalizedMessage("error.message.something.wrong.on.server",
+                    getUser(update).languageCode)
             logger.error("update.message.document.filesize in null")
             e.printStackTrace()
         } finally {

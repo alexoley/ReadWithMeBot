@@ -9,6 +9,8 @@ import org.stream.bot.services.IUserService
 import org.stream.bot.services.MARKDOWN_ENABLED
 import org.stream.bot.utils.Subscribers
 import org.telegram.abilitybots.api.util.AbilityUtils
+import org.telegram.abilitybots.api.util.AbilityUtils.getLocalizedMessage
+import org.telegram.abilitybots.api.util.AbilityUtils.getUser
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 
@@ -27,9 +29,11 @@ class GetAllBooksCommandHandler : ICommandHandler {
         val user = userService.getUserByIdAndSubscriber(AbilityUtils.getChatId(update).toString(),
                 Subscribers.TELEGRAM).block()
         val sendText: String? = if (user?.fileList.isNullOrEmpty())
-            "You have no books...\nRun /addbook command to resolve it!"
+            getLocalizedMessage("books.list.command.have.no.books",
+                    getUser(update).languageCode)
         else
-            "Your \uD83D\uDCD6 list:\n\n" +
+            getLocalizedMessage("books.list.command.book.list",
+                    getUser(update).languageCode) +
                     user?.fileList?.asSequence()
                             ?.mapIndexed { index, fileInfo -> "${index + 1}. ${fileInfo.fileName}\n" }
                             ?.reduce { acc, s -> acc + s }
