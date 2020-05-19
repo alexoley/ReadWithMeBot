@@ -69,7 +69,7 @@ class AddBookCommandHandler : ICommandHandler {
                                 getUser(update).languageCode).botText())
                         logger.error(t.message)
                     }
-                    , Runnable { bot.execute(sendMessage) }
+                    ,Runnable { bot.execute(sendMessage) }
             )
         } catch (e: TelegramApiException) {
             e.printStackTrace()
@@ -108,6 +108,10 @@ class AddBookCommandHandler : ICommandHandler {
                 return
             }
 
+            bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES,
+                    AbilityUtils.getChatId(update).toString(),
+                    States.NOT_WAITING.toString())
+
             //Send loading message if file more than 1 megabyte
             if (update.message.document.fileSize > 1024 * 1024) {
                 val loadingMessage = getLocalizedMessage("addbook.command.loading.file",
@@ -143,9 +147,6 @@ class AddBookCommandHandler : ICommandHandler {
             logger.error("update.message.document.filesize in null")
             e.printStackTrace()
         } finally {
-            bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES,
-                    AbilityUtils.getChatId(update).toString(),
-                    States.NOT_WAITING.toString())
             bot.execute(sendMessage
                     .setText(sendText.botText())
                     .setReplyMarkup(KeyboardFactory.removeKeyboard())

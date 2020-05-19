@@ -1,5 +1,6 @@
 package org.stream.bot.services.impl.commands
 
+import kotlinx.coroutines.reactive.awaitFirst
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -13,6 +14,7 @@ import org.telegram.abilitybots.api.util.AbilityUtils.getLocalizedMessage
 import org.telegram.abilitybots.api.util.AbilityUtils.getUser
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
+import java.util.function.Consumer
 
 @Service
 class GetAllBooksCommandHandler : ICommandHandler {
@@ -26,22 +28,28 @@ class GetAllBooksCommandHandler : ICommandHandler {
     lateinit var userService: IUserService
 
     override fun answer(update: Update) {
-        val user = userService.getUserByIdAndSubscriber(AbilityUtils.getChatId(update).toString(),
-                Subscribers.TELEGRAM).block()
-        val sendText: String? = if (user?.fileList.isNullOrEmpty())
-            getLocalizedMessage("books.list.command.have.no.books",
-                    getUser(update).languageCode)
-        else
-            getLocalizedMessage("books.list.command.book.list",
-                    getUser(update).languageCode) +
-                    user?.fileList?.asSequence()
-                            ?.mapIndexed { index, fileInfo -> "${index + 1}. ${fileInfo.fileName}\n" }
-                            ?.reduce { acc, s -> acc + s }
+        userService.getUserByIdAndSubscriber(AbilityUtils.getChatId(update).toString(),
+                Subscribers.TELEGRAM).subscribe(
+                Consumer { user ->
+                    if (user != null) {
+                        val sendText: String? = if (user?.fileList.isNullOrEmpty())
+                            getLocalizedMessage("books.list.command.have.no.books",
+                                    getUser(update).languageCode)
+                        else
+                            getLocalizedMessage("books.list.command.book.list",
+                                    getUser(update).languageCode) +
+                                    user?.fileList?.asSequence()
+                                            ?.mapIndexed { index, fileInfo -> "${index + 1}. ${fileInfo.fileName}\n" }
+                                            ?.reduce { acc, s -> acc + s }
 
-        bot.execute(SendMessage()
-                .setText(sendText.botText())
-                .setChatId(AbilityUtils.getChatId(update))
-                .enableMarkdown(MARKDOWN_ENABLED))
+                        bot.execute(SendMessage()
+                                .setText(sendText.botText())
+                                .setChatId(AbilityUtils.getChatId(update))
+                                .enableMarkdown(MARKDOWN_ENABLED))
+                    }
+                },
+                Consumer { logger.error(it.message) })
+
     }
 
     override fun firstReply(update: Update) {

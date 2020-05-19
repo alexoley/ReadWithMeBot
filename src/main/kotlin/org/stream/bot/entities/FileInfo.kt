@@ -9,4 +9,5 @@ data class FileInfo(val absolutePath: String? = "",
                     val checksum: String,
                     val cronExpression: String? = "",
                     var lastSentPage: DocumentPosition = DocumentPosition(),
+                    //TODO: val numberOfPages: Int,
                     var stillReading: Boolean = true)
