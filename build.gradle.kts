@@ -43,6 +43,7 @@ dependencies {
 	implementation("com.google.apis:google-api-services-drive:v3-rev197-1.25.0")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
+	implementation("org.apache.tika:tika-parsers:1.24.1")
 }
 
 tasks.withType<Test> {

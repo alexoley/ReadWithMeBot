@@ -21,10 +21,10 @@ import java.io.InputStreamReader
 
 
 @Configuration
-//@Profile("production")
+@Profile("production")
 class ProductionConfig {
 
-    private val APPLICATION_NAME = "Google Drive API Java Quickstart"
+    private val APPLICATION_NAME = "ReadWithMeBot"
     private val TOKENS_DIRECTORY_PATH = "tokens"
     private val JSON_FACTORY: JacksonFactory = JacksonFactory.getDefaultInstance()
 

@@ -16,3 +16,5 @@ class ReadWithMeBotApplication
 		ApiContextInitializer.init()
 		runApplication<ReadWithMeBotApplication>(*args)
 	}
+
+//TODO: Rename commands: addbook->add, mybooks->books, removebook->remove

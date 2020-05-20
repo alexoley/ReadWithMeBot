@@ -66,3 +66,4 @@ credentials.json
 *.sh
 Read*
 /tokens/
+*Dockerfile
