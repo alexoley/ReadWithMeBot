@@ -1,4 +1,4 @@
-package org.stream.bot.services
+package org.stream.bot.services.impl.persistManagers
 
 import org.stream.bot.Bot
 import org.telegram.telegrambots.meta.api.methods.GetFile

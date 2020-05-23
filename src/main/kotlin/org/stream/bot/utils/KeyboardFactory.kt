@@ -10,7 +10,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import kotlin.collections.ArrayList
 
 
-class KeyboardFactory {
+open class KeyboardFactory {
     companion object {
 
         fun removeKeyboard(): ReplyKeyboard {

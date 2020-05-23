@@ -10,7 +10,6 @@ import org.stream.bot.Bot
 import org.stream.bot.entities.FileInfo
 import org.stream.bot.exceptions.DublicateBookException
 import org.stream.bot.exceptions.QuantityLimitBookException
-import org.stream.bot.services.AbstractTelegramPersistManager
 import org.stream.bot.services.IDocumentPersistManager
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
@@ -50,7 +49,7 @@ class LocalDocumentTelegramPersistManagerWithInputStream : IDocumentPersistManag
         val fileChecksum = writeInputStreamToFileAndGetItChecksum(telegramFileStream, localFile)
         logger.debug("Digest: $fileChecksum")
         //Check if book already present in user book list by its checksum
-        if (booksList.stream()?.anyMatch { fileInfo -> fileInfo.checksum.equals(fileChecksum, ignoreCase = true) }!!) {
+        if (booksList.stream().anyMatch { fileInfo -> fileInfo.checksum.equals(fileChecksum, ignoreCase = true) }) {
             localFile.delete()
             throw DublicateBookException()
         }

@@ -34,8 +34,8 @@ class RemoveBookCommandHandler : ICommandHandler {
     lateinit var persistManager: IDocumentPersistManager
 
     override fun answer(update: Update) {
-        userService.getUserByIdAndSubscriber(update.message.from.id.toString(), Subscribers.TELEGRAM).subscribe(
-                Consumer { user ->
+        userService.getUserByIdAndSubscriber(AbilityUtils.getChatId(update).toString(), Subscribers.TELEGRAM).subscribe(
+                { user ->
                     if (user != null) {
                         val sendMessage = SendMessage()
                                 .setChatId(AbilityUtils.getChatId(update))
@@ -53,14 +53,14 @@ class RemoveBookCommandHandler : ICommandHandler {
                         bot.execute(sendMessage)
                     }
                 },
-                Consumer { e -> logger.error(e.message) }
+                { e -> logger.error(e.message) }
         )
 
     }
 
     override fun firstReply(update: Update) {
         userService.getUserByIdAndSubscriber(AbilityUtils.getChatId(update).toString(), Subscribers.TELEGRAM).subscribe(
-                Consumer { user ->
+                { user ->
                     if (user != null) {
                         val removedFileInfo = user.fileList.find { fileInfo -> fileInfo.checksum.equals(update.callbackQuery.data) }
                         if (removedFileInfo != null && user.fileList.remove(removedFileInfo)) {
@@ -68,7 +68,7 @@ class RemoveBookCommandHandler : ICommandHandler {
                                 if (persistManager.removeFromStorage(removedFileInfo)) {
                                     bot.execute(SendMessage()
                                             .setText(getLocalizedMessage("remove.book.command.success.remove",
-                                                    getUser(update).languageCode,removedFileInfo?.fileName).botText())
+                                                    getUser(update).languageCode,removedFileInfo.fileName).botText())
                                             .setChatId(AbilityUtils.getChatId(update))
                                             .enableMarkdown(MARKDOWN_ENABLED))
                                 }
@@ -79,7 +79,7 @@ class RemoveBookCommandHandler : ICommandHandler {
                         }
                     }
                 },
-                Consumer { e -> logger.error(e.message) })
+                { e -> logger.error(e.message) })
 
     }
 

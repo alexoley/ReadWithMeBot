@@ -14,6 +14,10 @@ import org.telegram.abilitybots.api.util.AbilityUtils.getLocalizedMessage
 import org.telegram.abilitybots.api.util.AbilityUtils.getUser
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
 import java.util.function.Consumer
 
 @Service
@@ -28,19 +32,21 @@ class GetAllBooksCommandHandler : ICommandHandler {
     lateinit var userService: IUserService
 
     override fun answer(update: Update) {
+        val zoft = ZoneOffset.of("+10:00");
+        logger.info("$zoft")
         userService.getUserByIdAndSubscriber(AbilityUtils.getChatId(update).toString(),
                 Subscribers.TELEGRAM).subscribe(
-                Consumer { user ->
+                { user ->
                     if (user != null) {
-                        val sendText: String? = if (user?.fileList.isNullOrEmpty())
+                        val sendText: String? = if (user.fileList.isNullOrEmpty())
                             getLocalizedMessage("books.list.command.have.no.books",
                                     getUser(update).languageCode)
                         else
                             getLocalizedMessage("books.list.command.book.list",
                                     getUser(update).languageCode) +
-                                    user?.fileList?.asSequence()
-                                            ?.mapIndexed { index, fileInfo -> "${index + 1}. ${fileInfo.fileName}\n" }
-                                            ?.reduce { acc, s -> acc + s }
+                                    user.fileList.asSequence()
+                                            .mapIndexed { index, fileInfo -> "${index + 1}. ${fileInfo.fileName}\n" }
+                                            .reduce { acc, s -> acc + s }
 
                         bot.execute(SendMessage()
                                 .setText(sendText.botText())
@@ -48,7 +54,7 @@ class GetAllBooksCommandHandler : ICommandHandler {
                                 .enableMarkdown(MARKDOWN_ENABLED))
                     }
                 },
-                Consumer { logger.error(it.message) })
+                { logger.error(it.message) })
 
     }
 

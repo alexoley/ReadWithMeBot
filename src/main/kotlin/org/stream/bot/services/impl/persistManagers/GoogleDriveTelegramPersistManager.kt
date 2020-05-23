@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service
 import org.stream.bot.Bot
 import org.stream.bot.entities.FileInfo
 import org.stream.bot.exceptions.DublicateBookException
-import org.stream.bot.services.AbstractTelegramPersistManager
 import org.stream.bot.services.IDocumentPersistManager
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
@@ -43,7 +42,7 @@ class GoogleDriveTelegramPersistManager : IDocumentPersistManager, AbstractTeleg
                     .setFields("id,md5Checksum")
                     .execute()
         }
-        if (booksList.stream()?.anyMatch { fileInfo -> fileInfo.checksum.equals(file.md5Checksum, ignoreCase = true) }!!) {
+        if (booksList.stream().anyMatch { fileInfo -> fileInfo.checksum.equals(file.md5Checksum, ignoreCase = true) }) {
             googleDriveService.files().delete(file.id).execute()
             throw DublicateBookException()
         }
@@ -57,7 +56,7 @@ class GoogleDriveTelegramPersistManager : IDocumentPersistManager, AbstractTeleg
     }
 
     override fun downloadFromStorage(fileInfo: FileInfo): File {
-        var outputStream = ByteArrayOutputStream()
+        val outputStream = ByteArrayOutputStream()
         googleDriveService.files().get(fileInfo.relativePath)
                 .executeMediaAndDownloadTo(outputStream)
         val tempFile = File.createTempFile("bookfile-", ".tmp")

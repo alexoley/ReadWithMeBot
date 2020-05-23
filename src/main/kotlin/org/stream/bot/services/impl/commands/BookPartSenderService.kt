@@ -54,7 +54,7 @@ class BookPartSenderService {
 
     fun replyOnNextPageCallback(update: Update) {
         userService.getUserByIdAndSubscriber(update.callbackQuery.from.id.toString(), Subscribers.TELEGRAM).subscribe(
-                Consumer { user ->
+                { user ->
                     val callback = update.callbackQuery.data.subSequence(8, update.callbackQuery.data.length)
                     if (user.fileList.asSequence().filter { it.stillReading }.any { it.checksum == callback }) {
                         val fileinfo = user.fileList.asSequence()
@@ -63,7 +63,7 @@ class BookPartSenderService {
                     }
                     userService.saveUser(user).subscribe()
                 },
-                Consumer { e -> logger.error(e.message) }
+                { e -> logger.error(e.message) }
         )
     }
 }

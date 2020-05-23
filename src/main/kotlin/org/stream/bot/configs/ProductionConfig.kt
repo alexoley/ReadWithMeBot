@@ -11,10 +11,13 @@ import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.client.util.store.FileDataStoreFactory
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
+import org.stream.bot.Bot
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStreamReader
@@ -34,6 +37,9 @@ class ProductionConfig {
      */
     private val SCOPES = listOf(DriveScopes.DRIVE)
 
+    @Autowired
+    lateinit var telegramBotBrowser: TelegramBotBrowser
+
     @Bean
     fun getNetHttpTransport(): NetHttpTransport {
         return GoogleNetHttpTransport.newTrustedTransport()
@@ -42,7 +48,6 @@ class ProductionConfig {
     @Bean
     fun getGoogleDriveCredential(@Value("\${google.drive.credentials}") googleDriveCredentials: String,
                                  HTTP_TRANSPORT: NetHttpTransport): Credential{
-
         val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY,
                 InputStreamReader(ByteArrayInputStream(googleDriveCredentials.toByteArray(Charsets.UTF_8))))
         val flow = GoogleAuthorizationCodeFlow.Builder(
@@ -51,7 +56,7 @@ class ProductionConfig {
                 .setAccessType("offline")
                 .build()
         val receiver = LocalServerReceiver.Builder().setPort(8888).build()
-        return AuthorizationCodeInstalledApp(flow, receiver).authorize("user")
+        return AuthorizationCodeInstalledApp(flow, receiver, telegramBotBrowser).authorize("user")
     }
 
     @Bean

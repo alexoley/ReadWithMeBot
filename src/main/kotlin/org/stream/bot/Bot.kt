@@ -28,7 +28,7 @@ import java.util.function.Predicate
 import kotlin.coroutines.CoroutineContext
 
 
-@Component
+@Component("bot")
 class Bot : AbilityBot {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -101,7 +101,7 @@ class Bot : AbilityBot {
                 .info("Adding new book")
                 .input(0)
                 .privacy(Privacy.PUBLIC)
-                .locality(Locality.USER)
+                .locality(Locality.ALL)
                 .action { addBookCommandHandler.answer(it.update()) }
                 .post {}
                 .build()
@@ -133,7 +133,7 @@ class Bot : AbilityBot {
                 .info("Remove book from list")
                 .input(0)
                 .privacy(Privacy.PUBLIC)
-                .locality(Locality.USER)
+                .locality(Locality.ALL)
                 .action { removeBookCommandHandler.answer(it.update()) }
                 .post {}
                 .build()
@@ -161,7 +161,7 @@ class Bot : AbilityBot {
                 .info("Get list of all my books")
                 .input(0)
                 .privacy(Privacy.PUBLIC)
-                .locality(Locality.USER)
+                .locality(Locality.ALL)
                 .action { getAllBooksCommandHandler.answer(it.update()) }
                 .post {}
                 .build()
@@ -173,7 +173,7 @@ class Bot : AbilityBot {
                 .info("Bot description")
                 .input(0)
                 .privacy(Privacy.PUBLIC)
-                .locality(Locality.USER)
+                .locality(Locality.ALL)
                 .action { this.execute(SendMessage()
                         .setChatId(it.chatId())
                         .setText(AbilityUtils.getLocalizedMessage("bot.description", it.user().languageCode)))}
@@ -187,11 +187,19 @@ class Bot : AbilityBot {
                 .info("Bot commands description")
                 .input(0)
                 .privacy(Privacy.PUBLIC)
-                .locality(Locality.USER)
+                .locality(Locality.ALL)
                 .action { this.execute(SendMessage()
                         .setChatId(it.chatId())
                         .setText(AbilityUtils.getLocalizedMessage("bot.help", it.user().languageCode)))}
                 .post {}
                 .build()
+    }
+
+    fun groupStart(): Reply {
+        val isStartInGroup = Predicate<Update> { AbilityUtils.isGroupUpdate(it) &&
+                ((it.message.newChatMembers.isNullOrEmpty().not() && it.message.newChatMembers[0].id==me.id)
+                        || (it.message.groupchatCreated!=null && it.message.groupchatCreated))}
+        val action = Consumer { update: Update -> startCommandHandler.answer(update) }
+        return Reply.of(action, Flag.MESSAGE, isStartInGroup)
     }
 }
