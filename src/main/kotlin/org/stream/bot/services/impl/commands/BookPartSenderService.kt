@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.stream.bot.Bot
 import org.stream.bot.entities.FileInfo
-import org.stream.bot.services.IUserService
+import org.stream.bot.services.IChatService
 import org.stream.bot.services.MARKDOWN_ENABLED
 import org.stream.bot.services.impl.TextPartExtractorService
 import org.stream.bot.utils.KeyboardFactory
@@ -14,7 +14,6 @@ import org.telegram.abilitybots.api.util.AbilityUtils
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
-import java.util.function.Consumer
 
 @Service
 class BookPartSenderService {
@@ -28,7 +27,7 @@ class BookPartSenderService {
     lateinit var bot: Bot
 
     @Autowired
-    lateinit var userService: IUserService
+    lateinit var chatService: IChatService
 
     @Autowired
     lateinit var bookPartSenderService: BookPartSenderService
@@ -37,7 +36,7 @@ class BookPartSenderService {
         return "```$this```"
     }
 
-    fun sendMessageAndUpdate(fileInfo: FileInfo, chatId: String) {
+    fun sendMessageAndUpdateFileInfo(fileInfo: FileInfo, chatId: String) {
         try {
             val text = textPartExtractorService.getNextTextPartAndPosition(fileInfo)
             bot.execute(SendMessage().setText(text)
@@ -53,15 +52,15 @@ class BookPartSenderService {
     }
 
     fun replyOnNextPageCallback(update: Update) {
-        userService.getUserByIdAndSubscriber(update.callbackQuery.from.id.toString(), Subscribers.TELEGRAM).subscribe(
-                { user ->
-                    val callback = update.callbackQuery.data.subSequence(8, update.callbackQuery.data.length)
-                    if (user.fileList.asSequence().filter { it.stillReading }.any { it.checksum == callback }) {
-                        val fileinfo = user.fileList.asSequence()
-                                .first { fileInfo -> fileInfo.checksum.equals(callback) }
-                        bookPartSenderService.sendMessageAndUpdate(fileinfo, AbilityUtils.getChatId(update).toString())
+        chatService.getUserByIdAndSubscriber(AbilityUtils.getChatId(update).toString(), Subscribers.TELEGRAM).subscribe(
+                { chat ->
+                    val callback = update.callbackQuery.data.substring(8, update.callbackQuery.data.length)
+                    if (chat.fileList.asSequence().filter { it.stillReading }.any { it.checksum.equals(callback,true) }) {
+                        val fileinfo = chat.fileList.asSequence()
+                                .first { fileInfo -> fileInfo.checksum.equals(callback,true) }
+                        bookPartSenderService.sendMessageAndUpdateFileInfo(fileinfo, AbilityUtils.getChatId(update).toString())
+                        chatService.saveUser(chat).subscribe()
                     }
-                    userService.saveUser(user).subscribe()
                 },
                 { e -> logger.error(e.message) }
         )

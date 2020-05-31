@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service
 import org.stream.bot.Bot
 import org.stream.bot.entities.Chat
 import org.stream.bot.services.ICommandHandler
-import org.stream.bot.services.IUserService
+import org.stream.bot.services.IChatService
 import org.stream.bot.services.MARKDOWN_ENABLED
 import org.stream.bot.utils.*
 import org.telegram.abilitybots.api.util.AbilityUtils.*
@@ -24,20 +24,20 @@ class StartCommandHandler : ICommandHandler {
     lateinit var bot: Bot
 
     @Autowired
-    lateinit var userService: IUserService
+    lateinit var chatService: IChatService
 
 
     @ExperimentalStdlibApi
     override fun answer(update: Update) {
         try {
-            userService.saveUserIfNotExist(Chat(id = getChatId(update).toString(),
+            chatService.saveUserIfNotExist(Chat(id = getChatId(update).toString(),
                     subscriber = Subscribers.TELEGRAM,
                     firstName = update.getChatFirstName(),
                     lastName = update.getChatLastName(),
                     username = update.getChatUsername(),
                     chatType = update.getChatType()))
             val text = getLocalizedMessage("start.command.answer",
-                    getUser(update).languageCode, update.getChatFirstName())
+                    getUser(update).languageCode, update.getChatFirstName(),bot.botUsername)
             bot.execute(SendMessage().setText(text.botText())
                     .enableMarkdown(MARKDOWN_ENABLED)
                     .setChatId(getChatId(update)))

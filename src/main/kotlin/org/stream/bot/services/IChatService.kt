@@ -5,7 +5,7 @@ import org.stream.bot.utils.Subscribers
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
-interface IUserService {
+interface IChatService {
 
     fun getUserByIdAndSubscriber(id: String, subscriber: Subscribers): Mono<Chat>
 

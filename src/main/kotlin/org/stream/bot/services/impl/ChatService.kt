@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.stream.bot.entities.Chat
 import org.stream.bot.repositories.UserReactiveRepository
-import org.stream.bot.services.IUserService
+import org.stream.bot.services.IChatService
 import org.stream.bot.utils.Subscribers
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 import java.util.function.Consumer
 
 @Service
-class UserService : IUserService {
+class ChatService : IChatService {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 

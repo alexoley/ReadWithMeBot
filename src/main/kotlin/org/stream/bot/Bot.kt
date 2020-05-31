@@ -1,19 +1,12 @@
 package org.stream.bot
 
-import com.google.api.services.drive.Drive
-import com.google.api.services.drive.model.File
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.stream.bot.services.ICommandHandler
-import org.stream.bot.services.IUserService
-import org.stream.bot.services.MARKDOWN_ENABLED
 import org.stream.bot.services.impl.commands.BookPartSenderService
-import org.stream.bot.services.impl.Scheduler
-import org.stream.bot.services.impl.commands.CancelCommandHandler
 import org.stream.bot.utils.BotConstants
-import org.stream.bot.utils.KeyboardFactory
 import org.stream.bot.utils.States
 import org.telegram.abilitybots.api.bot.AbilityBot
 import org.telegram.abilitybots.api.objects.*
@@ -21,7 +14,6 @@ import org.telegram.abilitybots.api.util.AbilityUtils
 import org.telegram.abilitybots.api.util.AbilityUtils.getChatId
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import java.util.Objects.nonNull
 import java.util.function.Consumer
 import java.util.function.Predicate
@@ -116,7 +108,7 @@ class Bot : AbilityBot {
                                     States.WAIT_FOR_BOOK.toString()))
                         addBookCommandHandler.firstReply(update)
                 }
-        return Reply.of(action, Flag.DOCUMENT);
+        return Reply.of(action, Flag.DOCUMENT, Flag.MESSAGE);
     }
 
 

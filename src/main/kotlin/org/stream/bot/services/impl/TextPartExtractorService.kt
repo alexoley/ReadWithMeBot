@@ -61,8 +61,13 @@ class TextPartExtractorService {
             nextPages[nextPages.size - 1] = Pair(nextPages.last().first,
                     nextPages.last().second.substring(0, lastPageSubstringEndIndex))
 
+            val nextPagesCopy = nextPages
+
             //fit to the first punctuation
             nextPages = nextPages.trimToPunctuation(messageSizeMinusHeader)
+
+            //check if list empty, it means that algorithm cannot find stop symbol. Then return all symbols
+            nextPages = if (nextPages.isNullOrEmpty() && nextPagesCopy.isNotEmpty()) nextPagesCopy else nextPages
         }
         else{
             fileInfo.stillReading=false
