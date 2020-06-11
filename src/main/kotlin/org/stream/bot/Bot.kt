@@ -1,5 +1,6 @@
 package org.stream.bot
 
+import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -14,10 +15,11 @@ import org.telegram.abilitybots.api.util.AbilityUtils
 import org.telegram.abilitybots.api.util.AbilityUtils.getChatId
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
+import java.util.*
 import java.util.Objects.nonNull
 import java.util.function.Consumer
 import java.util.function.Predicate
-import kotlin.coroutines.CoroutineContext
+import kotlin.concurrent.schedule
 
 
 @Component("bot")
@@ -65,7 +67,7 @@ class Bot : AbilityBot {
 
     //TODO: Migrate to coroutines
     @Autowired
-    lateinit var cc: CoroutineContext
+    lateinit var cs: CoroutineScope
 
     fun String?.makeBold(): String {
         return "*$this*"
