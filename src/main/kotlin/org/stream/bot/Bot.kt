@@ -196,4 +196,18 @@ class Bot : AbilityBot {
         val action = Consumer { update: Update -> startCommandHandler.answer(update) }
         return Reply.of(action, Flag.MESSAGE, isStartInGroup)
     }
+
+    fun feedback(): Ability {
+        return Ability.builder()
+                .name("feedback")
+                .info("Information on how to leave feedback")
+                .input(0)
+                .privacy(Privacy.PUBLIC)
+                .locality(Locality.ALL)
+                .action { this.execute(SendMessage()
+                        .setChatId(it.chatId())
+                        .setText(AbilityUtils.getLocalizedMessage("bot.feedback", it.user().languageCode)))}
+                .post {}
+                .build()
+    }
 }
