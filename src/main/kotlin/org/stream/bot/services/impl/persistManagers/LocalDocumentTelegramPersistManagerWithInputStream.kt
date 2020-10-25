@@ -44,7 +44,7 @@ class LocalDocumentTelegramPersistManagerWithInputStream : IDocumentPersistManag
     @Throws(TelegramApiException::class, DublicateBookException::class, QuantityLimitBookException::class, IOException::class)
     override fun persistToStorage(update: Update, filenameGenerated: String, booksList: ArrayList<FileInfo>): FileInfo {
         val telegramFileStream = bot.downloadFileAsStream(downloadTelegramFileWithId(update.message.document.fileId))
-        val localPath = bookDirectory + "/" + filenameGenerated
+        val localPath = "$bookDirectory/$filenameGenerated"
         val localFile = File(localPath)
         val fileChecksum = writeInputStreamToFileAndGetItChecksum(telegramFileStream, localFile)
         logger.debug("Digest: $fileChecksum")

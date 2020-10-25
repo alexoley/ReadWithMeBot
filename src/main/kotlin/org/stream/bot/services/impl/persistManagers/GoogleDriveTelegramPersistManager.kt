@@ -34,7 +34,7 @@ class GoogleDriveTelegramPersistManager : IDocumentPersistManager, AbstractTeleg
     override fun persistToStorage(update: Update, filenameGenerated: String, booksList: ArrayList<FileInfo>): FileInfo {
         val telegramFileStream = bot.downloadFileAsStream(downloadTelegramFileWithId(update.message.document.fileId))
         val fileMetadata = com.google.api.services.drive.model.File()
-        fileMetadata.setName(filenameGenerated)
+        fileMetadata.name = filenameGenerated
         var file = com.google.api.services.drive.model.File()
         telegramFileStream.use {
             val mediaContent = InputStreamContent(update.message.document.mimeType, it)
@@ -69,8 +69,8 @@ class GoogleDriveTelegramPersistManager : IDocumentPersistManager, AbstractTeleg
     }
 
     override fun removeFromStorage(fileInfo: FileInfo): Boolean {
-        val responce = googleDriveService.files().delete(fileInfo.relativePath).executeUnparsed()
-        if (responce.statusCode == 204)
+        val response = googleDriveService.files().delete(fileInfo.relativePath).executeUnparsed()
+        if (response.statusCode == 204)
             return true
         return false
     }

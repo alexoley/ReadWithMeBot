@@ -6,7 +6,7 @@ import org.stream.bot.services.IDocumentFormatExtractor
 import java.io.File
 
 @Service
-class TextFormatExtractor: IDocumentFormatExtractor  {
+class TextFormatExtractor : IDocumentFormatExtractor {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -18,10 +18,10 @@ class TextFormatExtractor: IDocumentFormatExtractor  {
 
     override fun extractTextFromDocumentPage(file: File, page: Int): String {
         val listOfLines = file.readLines()
-        if (page<=listOfLines.size)
-            return listOfLines.get(page)
+        return if (page <= listOfLines.size)
+            listOfLines[page]
         else
-            return ""
+            ""
     }
 
     override fun numberOfPages(file: File): Int {

@@ -28,15 +28,15 @@ class Scheduler {
         logger.info("Scheduler sender run.")
         chatService.getAllUsers()
                 .filter { chat ->
-                    if (chat != null) chat.fileList.isNullOrEmpty().not() else false
+                    chat?.fileList?.isNullOrEmpty()?.not() ?: false
                 }
                 .subscribe(
-                        Consumer {
+                        {
                             it.fileList.filter { fileInfo -> fileInfo.stillReading }
                                     .forEach(Consumer { fileInfo -> bookPartSenderService.sendMessageAndUpdateFileInfo(fileInfo, it.id) })
                             chatService.saveUser(it).subscribe()
                         },
-                        Consumer {
+                        {
                             logger.error(it.message)
                             it.printStackTrace()
                         })

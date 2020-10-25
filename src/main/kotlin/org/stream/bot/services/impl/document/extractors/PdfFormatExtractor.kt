@@ -15,16 +15,15 @@ class PdfFormatExtractor: IDocumentFormatExtractor {
     val format: String = "application/pdf"
 
     override fun getDocumentMimeType(): String {
-        return format;
+        return format
     }
 
     override fun extractTextFromDocumentPage(file: File, page: Int): String {
         PDDocument.load(file).use { doc ->
             val stripper = PDFTextStripper()
-            stripper.setStartPage(page)
-            stripper.setEndPage(page)
-            val text = stripper.getText(doc)
-            return text
+            stripper.startPage = page
+            stripper.endPage = page
+            return stripper.getText(doc)
         }
     }
 

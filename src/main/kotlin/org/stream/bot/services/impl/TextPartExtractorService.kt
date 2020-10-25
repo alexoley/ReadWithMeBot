@@ -32,9 +32,7 @@ class TextPartExtractorService {
 
 
     fun getNextTextPartAndPosition(fileInfo: FileInfo): String {
-        val documentFormatExtractor = documentFormatExtractors.get(fileInfo.mimeType)
-        if (documentFormatExtractor==null)
-            throw NoSuchDocumentFormatExtractor()
+        val documentFormatExtractor = documentFormatExtractors[fileInfo.mimeType] ?: throw NoSuchDocumentFormatExtractor()
         val file = persistManager.downloadFromStorage(fileInfo)
         val numberOfPages = documentFormatExtractor.numberOfPages(file)
         var position = fileInfo.lastSentPage.letterPosition

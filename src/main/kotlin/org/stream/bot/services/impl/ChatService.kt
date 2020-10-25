@@ -26,12 +26,12 @@ class ChatService : IChatService {
     override fun saveUserIfNotExist(chat: Chat){
         userReactiveRepository.existsByIdAndSubscriber(chat.id, chat.subscriber)
                 .subscribe(
-                        Consumer { t ->
+                        { t ->
                             if (t!=null && t.not()){
                                 userReactiveRepository.save(chat).subscribe()
                             }
                         },
-                        Consumer { t -> logger.error(t.message) }
+                        { t -> logger.error(t.message) }
                 )
     }
 
