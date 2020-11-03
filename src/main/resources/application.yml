@@ -1,0 +1,47 @@
+spring:
+  main:
+    banner-mode: off
+  data:
+    mongodb:
+      uri: ${MONGO_URI}
+bot:
+  token: ${BOT_TOKEN}
+  username: ${BOT_USERNAME}
+  creatorId: ${BOT_CREATORID}
+  message:
+    size: 1600
+    max-size: 4096
+
+local:
+  books:
+    directory: bookshelf
+
+google:
+  service:
+    account:
+      credentials: ${GOOGLE_SERVICE_ACCOUNT_CREDENTIALS}
+file:
+  parent:
+    folder:
+      id: ${FILE_PARENT_FOLDER_ID:}
+
+system:
+  pool-size: 2
+
+logging:
+  file:
+    name: ${LOGGING_FILE_NAME:}
+    max-size: 20MB
+    max-history: 10
+  level:
+    root: INFO
+    org.stream.bot: DEBUG
+
+#actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  server:
+    port: 8082
