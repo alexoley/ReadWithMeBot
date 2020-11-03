@@ -41,6 +41,8 @@ dependencies {
 	}
 	implementation("com.google.oauth-client:google-oauth-client-jetty:1.30.6")
 	implementation("com.google.apis:google-api-services-drive:v3-rev197-1.25.0")
+	implementation("com.google.auth:google-auth-library-oauth2-http:0.22.0")
+
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
 	implementation("org.apache.tika:tika-parsers:1.24.1")

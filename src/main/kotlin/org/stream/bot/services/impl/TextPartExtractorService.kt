@@ -51,7 +51,10 @@ class TextPartExtractorService {
             nextPages.add(Pair(page, documentFormatExtractor.extractTextFromDocumentPage(file, page)))
         }
 
+        logger.debug("nextPages map size: ${nextPages.size}")
+        logger.debug("nextPages map: $nextPages")
 
+        //trim to message length
         if (nextPages.asSequence().map { it.second.length }.reduce { e1, e2 -> e1 + e2 } > messageSizeMinusHeader) {
             //fit last string
             val lastPageSubstringEndIndex = nextPages.last().second.length -
@@ -70,6 +73,9 @@ class TextPartExtractorService {
         else{
             fileInfo.stillReading=false
         }
+
+        logger.debug("nextPages map size(after trim to message length): ${nextPages.size}")
+        logger.debug("nextPages map(after trim to message length): $nextPages")
 
         //check if we read same page, when position will be incremented by text length
         //and form a header

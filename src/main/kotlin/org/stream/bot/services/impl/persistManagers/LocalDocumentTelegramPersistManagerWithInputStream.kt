@@ -3,7 +3,6 @@ package org.stream.bot.services.impl.persistManagers
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.stream.bot.Bot
@@ -20,7 +19,7 @@ import java.security.MessageDigest
 import javax.annotation.PostConstruct
 
 
-@Primary
+
 @Service("localPersistManager")
 @Profile("local")
 class LocalDocumentTelegramPersistManagerWithInputStream : IDocumentPersistManager, AbstractTelegramPersistManager(){

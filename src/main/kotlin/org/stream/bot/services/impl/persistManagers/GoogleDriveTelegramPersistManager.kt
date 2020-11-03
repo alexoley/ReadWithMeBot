@@ -5,7 +5,8 @@ import com.google.api.services.drive.Drive
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.context.annotation.Profile
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Service
 import org.stream.bot.Bot
 import org.stream.bot.entities.FileInfo
@@ -16,10 +17,10 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
+import kotlin.collections.ArrayList
 
-
+@Primary
 @Service
-@Profile("production")
 class GoogleDriveTelegramPersistManager : IDocumentPersistManager, AbstractTelegramPersistManager() {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -30,11 +31,15 @@ class GoogleDriveTelegramPersistManager : IDocumentPersistManager, AbstractTeleg
     @Autowired
     override lateinit var bot: Bot
 
+    @Value("\${file.parent.folder.id}")
+    lateinit var fileParentFolderId: String
+
     @Throws(TelegramApiException::class, DublicateBookException::class, IOException::class)
     override fun persistToStorage(update: Update, filenameGenerated: String, booksList: ArrayList<FileInfo>): FileInfo {
         val telegramFileStream = bot.downloadFileAsStream(downloadTelegramFileWithId(update.message.document.fileId))
         val fileMetadata = com.google.api.services.drive.model.File()
         fileMetadata.name = filenameGenerated
+        fileMetadata.parents = listOf(fileParentFolderId)
         var file = com.google.api.services.drive.model.File()
         telegramFileStream.use {
             val mediaContent = InputStreamContent(update.message.document.mimeType, it)
