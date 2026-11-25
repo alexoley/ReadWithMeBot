@@ -38,9 +38,12 @@ class StartCommandHandler : ICommandHandler {
                     chatType = update.getChatType()))
             val text = getLocalizedMessage("start.command.answer",
                     getUser(update).languageCode, update.getChatFirstName(),bot.botUsername)
-            bot.execute(SendMessage().setText(text.botText())
-                    .enableMarkdown(MARKDOWN_ENABLED)
-                    .setChatId(getChatId(update)))
+            val message = SendMessage.builder()
+                    .text(text.botText())
+                    .chatId(getChatId(update).toString())
+                    .build()
+            message.enableMarkdown(MARKDOWN_ENABLED)
+            bot.execute(message)
             //TODO: Good morning/Good afternoon/Good evening
         } catch (e: TelegramApiException) {
 

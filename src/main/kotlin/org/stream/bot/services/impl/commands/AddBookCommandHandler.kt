@@ -20,6 +20,7 @@ import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ForceReplyKeyboard
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
 import java.io.IOException
+import java.util.Optional
 
 
 @Service
@@ -43,41 +44,48 @@ class AddBookCommandHandler : ICommandHandler {
     lateinit var bookPartSenderService: BookPartSenderService
 
     override fun answer(update: Update) {
-        try {
-            val sendMessage = SendMessage()
-                    .setChatId(AbilityUtils.getChatId(update))
-                    .enableMarkdown(MARKDOWN_ENABLED)
+        val chatId = AbilityUtils.getChatId(update).toString()
+        val languageCode = getUser(update).languageCode
+        val sendMessage = SendMessage()
+        sendMessage.chatId = chatId
+        sendMessage.enableMarkdown(MARKDOWN_ENABLED)
 
-            //Check if book limit not reached
-            //val user = userService.getUserByIdAndSubscriber(AbilityUtils.getChatId(update).toString(), Subscribers.TELEGRAM).awaitFirst()
-            chatService.getUserByIdAndSubscriber(AbilityUtils.getChatId(update).toString(), Subscribers.TELEGRAM).subscribe(
-                    { chat ->
-                        if (chat.fileList.size >= chat.quantityBookLimit) {
-                            //sendMessage.setText("You already reached your book limit.\uD83D\uDE14".botText())
-                            //sendText="Your limit on the number of books is ${e.limit}.\nYou cannot exceed it."
-                            sendMessage.setText(getLocalizedMessage("addbook.command.book.limit.exceeded",
-                                    getUser(update).languageCode, chat.quantityBookLimit).botText())
-                        } else {
-                            sendMessage.setText(getLocalizedMessage("addbook.command.send.me.book",
-                                    getUser(update).languageCode).botText())
-                                    .setReplyMarkup(KeyboardFactory.cancelButton(getLocalizedMessage("cancel",
-                                            getUser(update).languageCode)))
-                                    .setReplyMarkup(ForceReplyKeyboard())
-                            //db.getMap<Any, Any>(BotConstants.CHAT_STATES)[ctx.chatId().toString()] = States.WAIT_FOR_BOOK
-                            bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES,
-                                    AbilityUtils.getChatId(update).toString(),
-                                    States.WAIT_FOR_BOOK.toString())
+        //Check if book limit not reached
+        chatService.getUserByIdAndSubscriber(chatId, Subscribers.TELEGRAM)
+                .map { Optional.of(it) }
+                .defaultIfEmpty(Optional.empty())
+                .subscribe(
+                        { optionalChat ->
+                            if (!optionalChat.isPresent) {
+                                //Chat is not registered yet (user never called /start)
+                                sendMessage.text = getLocalizedMessage("addbook.command.chat.not.found",
+                                        languageCode).botText()
+                            } else if (optionalChat.get().fileList.size >= optionalChat.get().quantityBookLimit) {
+                                sendMessage.text = getLocalizedMessage("addbook.command.book.limit.exceeded",
+                                        languageCode, optionalChat.get().quantityBookLimit).botText()
+                            } else {
+                                sendMessage.text = getLocalizedMessage("addbook.command.send.me.book",
+                                        languageCode).botText()
+                                sendMessage.replyMarkup = ForceReplyKeyboard.builder().forceReply(true).build()
+                                bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES, chatId,
+                                        States.WAIT_FOR_BOOK.toString())
+                            }
+                            executeSafely(sendMessage)
+                        },
+                        { t ->
+                            logger.error(t.message)
+                            sendMessage.text = getLocalizedMessage("error.message.something.wrong.on.server",
+                                    languageCode).botText()
+                            executeSafely(sendMessage)
                         }
-                    },
-                    { t ->
-                        sendMessage.setText(getLocalizedMessage("error.message.something.wrong.on.server",
-                                getUser(update).languageCode).botText())
-                        logger.error(t.message)
-                    }
-                    , { bot.execute(sendMessage) }
-            )
+                )
+    }
+
+    private fun executeSafely(sendMessage: SendMessage) {
+        try {
+            bot.execute(sendMessage)
         } catch (e: TelegramApiException) {
-            e.printStackTrace()
+            logger.error(e.message)
         }
     }
 
@@ -107,7 +115,8 @@ class AddBookCommandHandler : ICommandHandler {
 
     private fun process(update: Update, monoChat: Chat): FileInfo? {
         var fileInfo : FileInfo? = null
-        val sendMessage: SendMessage = SendMessage().setChatId(AbilityUtils.getChatId(update))
+        val sendMessage = SendMessage()
+        sendMessage.chatId = AbilityUtils.getChatId(update).toString()
         var sendText: String? = ""
         try {
 
@@ -134,10 +143,13 @@ class AddBookCommandHandler : ICommandHandler {
             if (update.message.document.fileSize > 1024 * 1024) {
                 val loadingMessage = getLocalizedMessage("addbook.command.loading.file",
                         getUser(update).languageCode)
-                bot.execute(sendMessage
-                        .setText(loadingMessage.botText())
-                        .setReplyMarkup(KeyboardFactory.removeKeyboard())
-                        .enableMarkdown(MARKDOWN_ENABLED))
+                val loadingSendMessage = SendMessage.builder()
+                        .chatId(sendMessage.chatId)
+                        .text(loadingMessage.botText())
+                        .replyMarkup(KeyboardFactory.removeKeyboard())
+                        .build()
+                loadingSendMessage.enableMarkdown(MARKDOWN_ENABLED)
+                bot.execute(loadingSendMessage)
             }
             val filenameGenerated = System.currentTimeMillis().toString() + "_" + update.message.document.fileName
             fileInfo = documentPersistManager.persistToStorage(update, filenameGenerated, monoChat.fileList)
@@ -161,11 +173,13 @@ class AddBookCommandHandler : ICommandHandler {
             logger.error("update.message.document.filesize in null")
             e.printStackTrace()
         } finally {
-            bot.execute(sendMessage
-                    .setText(sendText.botText())
-                    .setReplyMarkup(KeyboardFactory.removeKeyboard())
-                    .enableMarkdown(MARKDOWN_ENABLED))
-            return fileInfo
+            if (!sendText.isNullOrEmpty()) {
+                sendMessage.text = sendText.botText()
+                sendMessage.replyMarkup = KeyboardFactory.removeKeyboard()
+                sendMessage.enableMarkdown(MARKDOWN_ENABLED)
+                executeSafely(sendMessage)
+            }
         }
+        return fileInfo
     }
 }

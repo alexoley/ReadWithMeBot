@@ -20,9 +20,12 @@ class EpubFormatExtractor(@Value("\${bot.message.max-size}") val pageSize: Strin
 
     override fun extractTextFromDocumentPage(file: File, page: Int): String {
         val text = Tika().parseToString(file)
-        val textLength = text.length
-        val pageEnd = (pageSize.toInt() * page).coerceAtMost(textLength)
-        val pageBegin = pageEnd - pageSize.toInt()
+        val size = pageSize.toInt()
+        //pages are 1-based (see DocumentPosition)
+        val pageBegin = size * (page - 1)
+        if (page < 1 || pageBegin >= text.length)
+            return ""
+        val pageEnd = (size * page).coerceAtMost(text.length)
         return text.substring(pageBegin, pageEnd)
     }
 

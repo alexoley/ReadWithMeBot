@@ -41,10 +41,12 @@ class GetAllBooksCommandHandler : ICommandHandler {
                                             .mapIndexed { index, fileInfo -> "${index + 1}. ${fileInfo.fileName}\n" }
                                             .reduce { acc, s -> acc + s }
 
-                        bot.execute(SendMessage()
-                                .setText(sendText.botText())
-                                .setChatId(AbilityUtils.getChatId(update))
-                                .enableMarkdown(MARKDOWN_ENABLED))
+                        val message = SendMessage.builder()
+                                .text(sendText.botText())
+                                .chatId(AbilityUtils.getChatId(update).toString())
+                                .build()
+                        message.enableMarkdown(MARKDOWN_ENABLED)
+                        bot.execute(message)
                     }
                 },
                 { logger.error(it.message) })

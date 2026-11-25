@@ -14,30 +14,27 @@ open class KeyboardFactory {
     companion object {
 
         fun removeKeyboard(): ReplyKeyboard {
-            return ReplyKeyboardRemove()
+            return ReplyKeyboardRemove.builder().removeKeyboard(true).build()
         }
 
         fun cancelButton(keyword: String): ReplyKeyboard {
             val keyboardRow = KeyboardRow();
             keyboardRow.add(keyword)
             val keyboardRowList = listOf(keyboardRow)
-            val replyKeyboardMarkup = ReplyKeyboardMarkup()
-            replyKeyboardMarkup
-                    .setKeyboard(keyboardRowList)
-                    .setOneTimeKeyboard(true)
-                    .setResizeKeyboard(true)
-            return replyKeyboardMarkup;
+            return ReplyKeyboardMarkup.builder()
+                    .keyboard(keyboardRowList)
+                    .oneTimeKeyboard(true)
+                    .resizeKeyboard(true)
+                    .build()
         }
 
         fun inlineBookDeleteKeyboardFromList(bookList: List<FileInfo>): ReplyKeyboard {
             val rowsInline: List<List<InlineKeyboardButton>> =
-                    bookList.map { fileInfo -> InlineKeyboardButton().setText(fileInfo.fileName).setCallbackData(fileInfo.checksum) }
+                    bookList.map { fileInfo -> InlineKeyboardButton.builder().text(fileInfo.fileName).callbackData(fileInfo.checksum).build() }
                             .map { inlineKeyboardButton -> listOf(inlineKeyboardButton) }
                             .toCollection(ArrayList())
 
-            val replyKeyboardMarkup = InlineKeyboardMarkup()
-            replyKeyboardMarkup.setKeyboard(rowsInline)
-            return replyKeyboardMarkup;
+            return InlineKeyboardMarkup.builder().keyboard(rowsInline).build()
         }
 
         fun inlineBookGiveMoreKeyboard(fileInfo: FileInfo): ReplyKeyboard {
@@ -45,12 +42,10 @@ open class KeyboardFactory {
                 "${fileInfo.fileName.subSequence(0, 10)}...\uD83D\uDC49"
             else
                 "${fileInfo.fileName}...\uD83D\uDC49"
-            val button = InlineKeyboardButton().setText(text).setCallbackData("getnext:${fileInfo.checksum}")
+            val button = InlineKeyboardButton.builder().text(text).callbackData("getnext:${fileInfo.checksum}").build()
             val rowsInline: List<List<InlineKeyboardButton>> = mutableListOf(listOf<InlineKeyboardButton>(button));
 
-            val replyKeyboardMarkup = InlineKeyboardMarkup()
-            replyKeyboardMarkup.setKeyboard(rowsInline)
-            return replyKeyboardMarkup;
+            return InlineKeyboardMarkup.builder().keyboard(rowsInline).build()
         }
     }
 }

@@ -39,12 +39,15 @@ class BookPartSenderService {
     fun sendMessageAndUpdateFileInfo(fileInfo: FileInfo, chatId: String) {
         try {
             val text = textPartExtractorService.getNextTextPartAndPosition(fileInfo)
-            bot.execute(SendMessage().setText(text)
-                    .setChatId(chatId)
-                    .enableMarkdown(MARKDOWN_ENABLED)
-                    .disableWebPagePreview()
-                    .enableNotification()
-                    .setReplyMarkup(KeyboardFactory.inlineBookGiveMoreKeyboard(fileInfo)))
+            val message = SendMessage.builder()
+                    .text(text)
+                    .chatId(chatId)
+                    .replyMarkup(KeyboardFactory.inlineBookGiveMoreKeyboard(fileInfo))
+                    .build()
+            message.enableMarkdown(MARKDOWN_ENABLED)
+            message.disableWebPagePreview()
+            message.enableNotification()
+            bot.execute(message)
         } catch (e: TelegramApiException) {
             logger.error(e.message)
             e.printStackTrace()

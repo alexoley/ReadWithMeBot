@@ -37,15 +37,15 @@ class RemoveBookCommandHandler : ICommandHandler {
                 { chat ->
                     if (chat != null) {
                         val sendMessage = SendMessage()
-                                .setChatId(AbilityUtils.getChatId(update))
-                                .enableMarkdown(MARKDOWN_ENABLED)
+                        sendMessage.chatId = AbilityUtils.getChatId(update).toString()
+                        sendMessage.enableMarkdown(MARKDOWN_ENABLED)
                         if (chat.fileList.isEmpty()) {
-                            sendMessage.setText(getLocalizedMessage("remove.book.command.have.no.books",
-                                    getUser(update).languageCode).botText())
+                            sendMessage.text = getLocalizedMessage("remove.book.command.have.no.books",
+                                    getUser(update).languageCode).botText()
                         } else {
-                            sendMessage.setText(getLocalizedMessage("remove.book.command.what.to.delete",
-                                    getUser(update).languageCode).botText())
-                                    .setReplyMarkup(KeyboardFactory.inlineBookDeleteKeyboardFromList(chat.fileList))
+                            sendMessage.text = getLocalizedMessage("remove.book.command.what.to.delete",
+                                    getUser(update).languageCode).botText()
+                            sendMessage.replyMarkup = KeyboardFactory.inlineBookDeleteKeyboardFromList(chat.fileList)
                             bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES, AbilityUtils.getChatId(update).toString(),
                                     States.WAIT_FOR_REMOVE.toString())
                         }
@@ -65,15 +65,16 @@ class RemoveBookCommandHandler : ICommandHandler {
                         if (removedFileInfo != null && chat.fileList.remove(removedFileInfo)) {
                             chatService.saveUser(chat).subscribe {
                                 if (persistManager.removeFromStorage(removedFileInfo)) {
-                                    bot.execute(SendMessage()
-                                            .setText(getLocalizedMessage("remove.book.command.success.remove",
+                                    bot.execute(SendMessage.builder()
+                                            .text(getLocalizedMessage("remove.book.command.success.remove",
                                                     getUser(update).languageCode,removedFileInfo.fileName).botText())
-                                            .setChatId(AbilityUtils.getChatId(update)))
+                                            .chatId(AbilityUtils.getChatId(update).toString())
+                                            .build())
                                 }
                             }
                             bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES,
                                     AbilityUtils.getChatId(update).toString(),
-                                    States.WAIT_FOR_BOOK.toString())
+                                    States.NOT_WAITING.toString())
                         }
                     }
                 },

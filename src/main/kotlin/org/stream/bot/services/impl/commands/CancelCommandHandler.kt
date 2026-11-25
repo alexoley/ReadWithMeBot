@@ -31,12 +31,14 @@ class CancelCommandHandler : ICommandHandler {
                 bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES,
                         AbilityUtils.getChatId(update).toString(),
                         States.NOT_WAITING.toString())
-                bot.execute(SendMessage()
-                        .setText(getLocalizedMessage("cancel.command.action.canceled",
+                val message = SendMessage.builder()
+                        .text(getLocalizedMessage("cancel.command.action.canceled",
                                 getUser(update).languageCode).botText())
-                        .enableMarkdown(true)
-                        .setChatId(AbilityUtils.getChatId(update))
-                        .setReplyMarkup(KeyboardFactory.removeKeyboard()))
+                        .chatId(AbilityUtils.getChatId(update).toString())
+                        .replyMarkup(KeyboardFactory.removeKeyboard())
+                        .build()
+                message.enableMarkdown(true)
+                bot.execute(message)
             }
 
         } catch (e: TelegramApiException) {

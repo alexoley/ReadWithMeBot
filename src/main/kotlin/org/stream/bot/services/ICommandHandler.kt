@@ -20,14 +20,15 @@ interface ICommandHandler {
 
     //TODO: Make markdown which can stable escape all characters
     // Text that cannot be escaped: You've send me EF3e_int_filetest_01a.pdf.\nI wish you an exciting read.😌
-    fun String?.botText(): String?{
+    fun String?.botText(): String {
         //return "_${this}_"
-        return this
+        return this ?: ""
     }
 
     fun String?.escapeCharacters(): String{
         if (this!=null)
-        return this.replace("_","\\_")
+        return this.replace("\\","\\\\")
+                .replace("_","\\_")
                 .replace("*","\\*")
                 .replace("`","\\`")
                 .replace("[","\\[")
@@ -45,7 +46,6 @@ interface ICommandHandler {
                 .replace("}","\\}")
                 .replace(".","\\.")
                 .replace("!","\\!")
-                .replace("\\","\\\\")
 
         return ""
     }

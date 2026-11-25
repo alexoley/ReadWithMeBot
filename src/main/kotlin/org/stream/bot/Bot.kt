@@ -32,9 +32,9 @@ class Bot : AbilityBot {
             super(token, username)
 
     @Value("\${bot.creatorId}")
-    var creatorId: Int = 0
+    var creatorId: Long = 0
 
-    override fun creatorId(): Int {
+    override fun creatorId(): Long {
         return creatorId
     }
 
@@ -168,9 +168,10 @@ class Bot : AbilityBot {
                 .input(0)
                 .privacy(Privacy.PUBLIC)
                 .locality(Locality.ALL)
-                .action { this.execute(SendMessage()
-                        .setChatId(it.chatId())
-                        .setText(AbilityUtils.getLocalizedMessage("bot.description", it.user().languageCode)))}
+                .action { this.execute(SendMessage.builder()
+                        .chatId(it.chatId().toString())
+                        .text(AbilityUtils.getLocalizedMessage("bot.description", it.user().languageCode))
+                        .build())}
                 .post {}
                 .build()
     }
@@ -182,9 +183,10 @@ class Bot : AbilityBot {
                 .input(0)
                 .privacy(Privacy.PUBLIC)
                 .locality(Locality.ALL)
-                .action { this.execute(SendMessage()
-                        .setChatId(it.chatId())
-                        .setText(AbilityUtils.getLocalizedMessage("bot.help", it.user().languageCode)))}
+                .action { this.execute(SendMessage.builder()
+                        .chatId(it.chatId().toString())
+                        .text(AbilityUtils.getLocalizedMessage("bot.help", it.user().languageCode))
+                        .build())}
                 .post {}
                 .build()
     }
@@ -204,9 +206,10 @@ class Bot : AbilityBot {
                 .input(0)
                 .privacy(Privacy.PUBLIC)
                 .locality(Locality.ALL)
-                .action { this.execute(SendMessage()
-                        .setChatId(it.chatId())
-                        .setText(AbilityUtils.getLocalizedMessage("bot.feedback", it.user().languageCode)))}
+                .action { this.execute(SendMessage.builder()
+                        .chatId(it.chatId().toString())
+                        .text(AbilityUtils.getLocalizedMessage("bot.feedback", it.user().languageCode))
+                        .build())}
                 .post {}
                 .build()
     }

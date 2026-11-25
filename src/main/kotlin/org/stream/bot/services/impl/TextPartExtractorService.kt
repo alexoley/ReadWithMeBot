@@ -70,7 +70,8 @@ class TextPartExtractorService {
             //check if list empty, it means that algorithm cannot find stop symbol. Then return all symbols
             nextPages = if (nextPages.isNullOrEmpty() && nextPagesCopy.isNotEmpty()) nextPagesCopy else nextPages
         }
-        else{
+        else if (page >= numberOfPages) {
+            //the whole rest of the document fits into this message
             fileInfo.stillReading=false
         }
 

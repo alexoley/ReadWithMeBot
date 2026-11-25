@@ -32,8 +32,8 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-test") {
 		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
 	}
-	implementation("org.telegram:telegrambots-abilities:4.7")
-	implementation("org.telegram:telegrambots-spring-boot-starter:4.1.2")
+	implementation("org.telegram:telegrambots-abilities:5.1.0")
+	implementation("org.telegram:telegrambots-spring-boot-starter:5.1.0")
 	implementation("org.apache.pdfbox:pdfbox:2.0.19")
 	//dependencies for google drive
 	implementation("com.google.api-client:google-api-client:1.30.9"){
@@ -46,10 +46,15 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
 	implementation("org.apache.tika:tika-parsers:1.24.1")
+
+	testImplementation("org.mockito:mockito-inline")
 }
 
 tasks.withType<Test> {
-	useJUnitPlatform()
+	// "integration" tests need a real MongoDB, bot token and Telegram/Google access
+	useJUnitPlatform {
+		excludeTags("integration")
+	}
 }
 
 tasks.withType<KotlinCompile> {

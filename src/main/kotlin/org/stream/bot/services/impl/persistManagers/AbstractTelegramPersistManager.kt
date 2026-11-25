@@ -11,6 +11,6 @@ abstract class AbstractTelegramPersistManager{
     //TODO: Think about where to place implementation of this method. Maybe in interface default method
     @Throws(TelegramApiException::class)
     fun downloadTelegramFileWithId(fileId: String): org.telegram.telegrambots.meta.api.objects.File {
-        return bot.execute(GetFile().setFileId(fileId))
+        return bot.execute(GetFile.builder().fileId(fileId).build())
     }
 }
