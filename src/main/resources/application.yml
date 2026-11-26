@@ -1,9 +1,8 @@
 spring:
   main:
     banner-mode: off
-  data:
-    mongodb:
-      uri: ${MONGO_URI}
+  mongodb:
+    uri: ${MONGO_URI}
 bot:
   token: ${BOT_TOKEN}
   username: ${BOT_USERNAME}
@@ -31,8 +30,10 @@ system:
 logging:
   file:
     name: ${LOGGING_FILE_NAME:}
-    max-size: 20MB
-    max-history: 10
+  logback:
+    rollingpolicy:
+      max-file-size: 20MB
+      max-history: 10
   level:
     root: INFO
     org.stream.bot: DEBUG

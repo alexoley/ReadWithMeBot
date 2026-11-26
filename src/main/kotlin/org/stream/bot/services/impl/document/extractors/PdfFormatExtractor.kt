@@ -1,6 +1,6 @@
 package org.stream.bot.services.impl.document.extractors
 
-import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.pdfbox.Loader
 import org.apache.pdfbox.text.PDFTextStripper
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -19,7 +19,7 @@ class PdfFormatExtractor: IDocumentFormatExtractor {
     }
 
     override fun extractTextFromDocumentPage(file: File, page: Int): String {
-        PDDocument.load(file).use { doc ->
+        Loader.loadPDF(file).use { doc ->
             val stripper = PDFTextStripper()
             stripper.startPage = page
             stripper.endPage = page
@@ -28,6 +28,6 @@ class PdfFormatExtractor: IDocumentFormatExtractor {
     }
 
     override fun numberOfPages(file: File): Int {
-        PDDocument.load(file).use { return it.numberOfPages }
+        Loader.loadPDF(file).use { return it.numberOfPages }
     }
 }

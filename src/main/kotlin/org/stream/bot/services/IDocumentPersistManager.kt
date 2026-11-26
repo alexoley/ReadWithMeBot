@@ -1,6 +1,5 @@
 package org.stream.bot.services
 
-import org.stream.bot.Bot
 import org.stream.bot.entities.FileInfo
 import org.telegram.telegrambots.meta.api.methods.GetFile
 import org.telegram.telegrambots.meta.api.objects.Update

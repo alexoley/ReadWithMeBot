@@ -17,9 +17,10 @@ class TextFormatExtractor : IDocumentFormatExtractor {
     }
 
     override fun extractTextFromDocumentPage(file: File, page: Int): String {
+        //pages are 1-based (see DocumentPosition), one line is one page
         val listOfLines = file.readLines()
-        return if (page <= listOfLines.size)
-            listOfLines[page]
+        return if (page in 1..listOfLines.size)
+            listOfLines[page - 1] + "\n"
         else
             ""
     }

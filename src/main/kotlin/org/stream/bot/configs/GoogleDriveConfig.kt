@@ -3,7 +3,7 @@ package org.stream.bot.configs
 
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.http.javanet.NetHttpTransport
-import com.google.api.client.json.jackson2.JacksonFactory
+import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
 import com.google.auth.Credentials
@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Profile
 class GoogleDriveConfig {
 
     private val APPLICATION_NAME = "ReadWithMeBot"
-    private val JSON_FACTORY: JacksonFactory = JacksonFactory.getDefaultInstance()
+    private val JSON_FACTORY: GsonFactory = GsonFactory.getDefaultInstance()
 
     /**
      * Global instance of the scopes required by this quickstart.

@@ -67,3 +67,7 @@ Read With Me*
 Read*
 /tokens/
 *Dockerfile
+# the project build Dockerfile is tracked (no secrets inside; they come from .env)
+!/Dockerfile
+
+.env

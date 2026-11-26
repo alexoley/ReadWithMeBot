@@ -12,17 +12,13 @@ import org.stream.bot.services.IDocumentPersistManager
 import java.util.function.Predicate
 
 @Service
-class TextPartExtractorService {
+class TextPartExtractorService(listOfDocumentFormatExtractors: List<IDocumentFormatExtractor>) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    @Autowired
-    constructor(listOfDocumentFormatExtractors: List<IDocumentFormatExtractor>){
-        documentFormatExtractors = listOfDocumentFormatExtractors.asSequence().map { it.getDocumentMimeType() to it }.toMap()
-    }
-
     //map of mime types opposite document format extractor implementations
-    var documentFormatExtractors : Map<String, IDocumentFormatExtractor>
+    val documentFormatExtractors: Map<String, IDocumentFormatExtractor> =
+            listOfDocumentFormatExtractors.associateBy { it.getDocumentMimeType() }
 
     @Autowired
     lateinit var persistManager: IDocumentPersistManager
@@ -70,7 +66,8 @@ class TextPartExtractorService {
             //check if list empty, it means that algorithm cannot find stop symbol. Then return all symbols
             nextPages = if (nextPages.isNullOrEmpty() && nextPagesCopy.isNotEmpty()) nextPagesCopy else nextPages
         }
-        else{
+        else if (page >= numberOfPages) {
+            //the whole rest of the document fits into this message
             fileInfo.stillReading=false
         }
 
