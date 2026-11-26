@@ -17,18 +17,16 @@ import reactor.core.publisher.Mono
 
 class BookPartSenderServiceTest {
 
-    private val bot = mockBot()
+    private val bot = mockClient()
     private val chatService = mock(IChatService::class.java)
     private val extractor = mock(TextPartExtractorService::class.java)
     private val service = BookPartSenderService()
-    private val selfProxy = mock(BookPartSenderService::class.java)
 
     @BeforeEach
     fun setUp() {
-        service.bot = bot
+        service.telegramClient = bot
         service.chatService = chatService
         service.textPartExtractorService = extractor
-        service.bookPartSenderService = selfProxy
     }
 
     private fun givenChat(chat: Chat) {
@@ -57,10 +55,11 @@ class BookPartSenderServiceTest {
         val book = TestFixtures.fileInfo(checksum = "abc")
         val chat = TestFixtures.chat(book)
         givenChat(chat)
+        `when`(extractor.getNextTextPartAndPosition(book)).thenReturn("next part")
 
         service.replyOnNextPageCallback(TestFixtures.callbackUpdate("getnext:ABC"))
 
-        verify(selfProxy).sendMessageAndUpdateFileInfo(book, TestFixtures.CHAT_ID_STR)
+        assertEquals("next part", lastSentMessage(bot).text)
         verify(chatService).saveUser(chat)
     }
 
@@ -72,7 +71,7 @@ class BookPartSenderServiceTest {
 
         service.replyOnNextPageCallback(TestFixtures.callbackUpdate("getnext:abc"))
 
-        verify(selfProxy, never()).sendMessageAndUpdateFileInfo(book, TestFixtures.CHAT_ID_STR)
+        verify(extractor, never()).getNextTextPartAndPosition(book)
         verify(chatService, never()).saveUser(chat)
     }
 }

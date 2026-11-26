@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.stream.bot.Bot
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import org.stream.bot.entities.FileInfo
 import org.stream.bot.exceptions.DublicateBookException
 import org.stream.bot.exceptions.QuantityLimitBookException
@@ -16,7 +16,7 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.security.MessageDigest
-import javax.annotation.PostConstruct
+import jakarta.annotation.PostConstruct
 
 
 
@@ -27,7 +27,7 @@ class LocalDocumentTelegramPersistManagerWithInputStream : IDocumentPersistManag
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @Autowired
-    override lateinit var bot: Bot
+    override lateinit var telegramClient: TelegramClient
 
     @Value("\${local.books.directory}")
     lateinit var bookDirectory: String
@@ -42,7 +42,7 @@ class LocalDocumentTelegramPersistManagerWithInputStream : IDocumentPersistManag
 
     @Throws(TelegramApiException::class, DublicateBookException::class, QuantityLimitBookException::class, IOException::class)
     override fun persistToStorage(update: Update, filenameGenerated: String, booksList: ArrayList<FileInfo>): FileInfo {
-        val telegramFileStream = bot.downloadFileAsStream(downloadTelegramFileWithId(update.message.document.fileId))
+        val telegramFileStream = telegramClient.downloadFileAsStream(downloadTelegramFileWithId(update.message.document.fileId))
         val localPath = "$bookDirectory/$filenameGenerated"
         val localFile = File(localPath)
         val fileChecksum = writeInputStreamToFileAndGetItChecksum(telegramFileStream, localFile)

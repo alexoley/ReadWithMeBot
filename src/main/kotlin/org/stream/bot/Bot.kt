@@ -1,216 +1,118 @@
 package org.stream.bot
 
-import kotlinx.coroutines.CoroutineScope
-import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Autowired
+import jakarta.annotation.PostConstruct
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import org.stream.bot.services.ChatStateStore
 import org.stream.bot.services.ICommandHandler
 import org.stream.bot.services.impl.commands.BookPartSenderService
-import org.stream.bot.utils.BotConstants
 import org.stream.bot.utils.States
-import org.telegram.abilitybots.api.bot.AbilityBot
-import org.telegram.abilitybots.api.objects.*
-import org.telegram.abilitybots.api.util.AbilityUtils
-import org.telegram.abilitybots.api.util.AbilityUtils.getChatId
+import org.telegram.telegrambots.abilitybots.api.bot.AbilityBot
+import org.telegram.telegrambots.abilitybots.api.db.DBContext
+import org.telegram.telegrambots.abilitybots.api.objects.Ability
+import org.telegram.telegrambots.abilitybots.api.objects.Flag
+import org.telegram.telegrambots.abilitybots.api.objects.Locality
+import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
+import org.telegram.telegrambots.abilitybots.api.objects.Privacy
+import org.telegram.telegrambots.abilitybots.api.objects.Reply
+import org.telegram.telegrambots.abilitybots.api.util.AbilityUtils
+import org.telegram.telegrambots.abilitybots.api.util.AbilityUtils.getChatId
+import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer
+import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
-import java.util.*
-import java.util.Objects.nonNull
-import java.util.function.Consumer
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import java.util.function.Predicate
-import kotlin.concurrent.schedule
 
-
+/**
+ * Telegram entry point: declares the bot commands (abilities) and replies and routes them to handlers.
+ * Registered for long polling by telegrambots-springboot-longpolling-starter via [SpringLongPollingBot].
+ */
 @Component("bot")
-class Bot : AbilityBot {
+class Bot(
+        telegramClient: TelegramClient,
+        db: DBContext,
+        @Value("\${bot.token}") private val token: String,
+        @Value("\${bot.username}") username: String,
+        @Value("\${bot.creatorId}") private val creatorId: Long,
+        private val chatStates: ChatStateStore,
+        @Qualifier("startCommandHandler") private val startCommandHandler: ICommandHandler,
+        @Qualifier("addBookCommandHandler") private val addBookCommandHandler: ICommandHandler,
+        @Qualifier("getAllBooksCommandHandler") private val getAllBooksCommandHandler: ICommandHandler,
+        @Qualifier("removeBookCommandHandler") private val removeBookCommandHandler: ICommandHandler,
+        @Qualifier("cancelCommandHandler") private val cancelCommandHandler: ICommandHandler,
+        private val bookPartSenderService: BookPartSenderService
+) : AbilityBot(telegramClient, username, db), SpringLongPollingBot {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    /** Since telegrambots 7 abilities have to be registered explicitly. */
+    @PostConstruct
+    fun registerAbilities() = onRegister()
 
-    @Autowired
-    constructor(@Value("\${bot.token}") token: String = "", @Value("\${bot.username}") username: String = "") :
-            super(token, username)
+    override fun creatorId(): Long = creatorId
 
-    @Value("\${bot.creatorId}")
-    var creatorId: Long = 0
+    override fun getBotToken(): String = token
 
-    override fun creatorId(): Long {
-        return creatorId
+    override fun getUpdatesConsumer(): LongPollingUpdateConsumer = this
+
+    private fun publicAbility(name: String, info: String, locality: Locality = Locality.ALL,
+                              action: (MessageContext) -> Unit): Ability =
+            Ability.builder()
+                    .name(name)
+                    .info(info)
+                    .input(0)
+                    .privacy(Privacy.PUBLIC)
+                    .locality(locality)
+                    .action(action)
+                    .build()
+
+    private fun sendLocalized(ctx: MessageContext, key: String) {
+        telegramClient.execute(SendMessage.builder()
+                .chatId(ctx.chatId().toString())
+                .text(AbilityUtils.getLocalizedMessage(key, ctx.user().languageCode))
+                .build())
     }
 
-    fun isValueEqualsInMapEntry(mapName: String, key: String, comparableValue: String): Boolean {
-        val value = db.getMap<Any, Any>(mapName)[key].toString()
-        return nonNull(value) && comparableValue.equals(value)
-    }
+    fun onStart(): Ability = publicAbility("start", "start", Locality.USER) { startCommandHandler.answer(it.update()) }
 
-    fun rewriteValueInMapEntry(mapName: String, key: String, value: String) {
-        db.getMap<Any, Any>(mapName)[key] = value
-    }
+    fun addBook(): Ability = publicAbility("addbook", "Adding new book") { addBookCommandHandler.answer(it.update()) }
 
-    @Autowired
-    lateinit var startCommandHandler: ICommandHandler
+    fun replyToBook(): Reply = Reply.of({ _, update ->
+        //If user profile waiting for book
+        if (chatStates.isInState(getChatId(update).toString(), States.WAIT_FOR_BOOK))
+            addBookCommandHandler.firstReply(update)
+    }, Flag.DOCUMENT, Flag.MESSAGE)
 
-    @Autowired
-    lateinit var addBookCommandHandler: ICommandHandler
+    fun cancelSending(): Reply = Reply.of({ _, update -> cancelCommandHandler.answer(update) },
+            Flag.TEXT,
+            Predicate { update -> update.message.text == AbilityUtils.getLocalizedMessage("cancel",
+                    AbilityUtils.getUser(update).languageCode) })
 
-    @Autowired
-    lateinit var getAllBooksCommandHandler: ICommandHandler
+    fun removeBook(): Ability = publicAbility("removebook", "Remove book from list") { removeBookCommandHandler.answer(it.update()) }
 
-    @Autowired
-    lateinit var removeBookCommandHandler: ICommandHandler
+    fun replyToRemoveCallback(): Reply = Reply.of({ _, update ->
+        if (chatStates.isInState(getChatId(update).toString(), States.WAIT_FOR_REMOVE))
+            removeBookCommandHandler.firstReply(update)
+    }, Flag.CALLBACK_QUERY)
 
-    @Autowired
-    lateinit var cancelCommandHandler: ICommandHandler
+    fun replyToGetNextBookPart(): Reply = Reply.of({ _, update -> bookPartSenderService.replyOnNextPageCallback(update) },
+            Flag.CALLBACK_QUERY,
+            Predicate { update -> update.callbackQuery.data.startsWith("getnext:") })
 
-    @Autowired
-    lateinit var bookPartSenderService: BookPartSenderService
+    fun getAllBooks(): Ability = publicAbility("mybooks", "Get list of all my books") { getAllBooksCommandHandler.answer(it.update()) }
 
-    //TODO: Migrate to coroutines
-    @Autowired
-    lateinit var cs: CoroutineScope
+    fun about(): Ability = publicAbility("about", "Bot description") { sendLocalized(it, "bot.description") }
 
-    fun String?.makeBold(): String {
-        return "*$this*"
-    }
+    fun help(): Ability = publicAbility("help", "Bot commands description") { sendLocalized(it, "bot.help") }
 
-    fun String?.makeItalic(): String {
-        return "_${this}_"
-    }
-
-    fun onStart(): Ability {
-        return Ability.builder()
-                .name("start")
-                .info("start")
-                .input(0)
-                .privacy(Privacy.PUBLIC)
-                .locality(Locality.USER)
-                .action { startCommandHandler.answer(it.update()) }
-                .post {}
-                .build()
-    }
-
-    fun addBook(): Ability {
-        return Ability.builder()
-                .name("addbook")
-                .info("Adding new book")
-                .input(0)
-                .privacy(Privacy.PUBLIC)
-                .locality(Locality.ALL)
-                .action { addBookCommandHandler.answer(it.update()) }
-                .post {}
-                .build()
-    }
-
-    fun replyToBook(): Reply {
-        val action =
-                Consumer { update: Update ->
-                    //If user profile waiting for book
-                    if (isValueEqualsInMapEntry(BotConstants.CHAT_STATES,
-                                    getChatId(update).toString(),
-                                    States.WAIT_FOR_BOOK.toString()))
-                        addBookCommandHandler.firstReply(update)
-                }
-        return Reply.of(action, Flag.DOCUMENT, Flag.MESSAGE);
-    }
-
-
-    fun cancelSending(): Reply {
-        val action = Consumer { update: Update -> cancelCommandHandler.answer(update) }
-        return Reply.of(action, Flag.TEXT, Predicate { update -> update.message.text.equals(AbilityUtils.getLocalizedMessage("cancel",
-                AbilityUtils.getUser(update).languageCode)) })
-    }
-
-
-    fun removeBook(): Ability {
-        return Ability.builder()
-                .name("removebook")
-                .info("Remove book from list")
-                .input(0)
-                .privacy(Privacy.PUBLIC)
-                .locality(Locality.ALL)
-                .action { removeBookCommandHandler.answer(it.update()) }
-                .post {}
-                .build()
-    }
-
-    fun replyToRemoveCallback(): Reply? {
-        val action = Consumer { update: Update ->
-            if (isValueEqualsInMapEntry(BotConstants.CHAT_STATES,
-                            getChatId(update).toString(),
-                            States.WAIT_FOR_REMOVE.toString()))
-                removeBookCommandHandler.firstReply(update)
-        }
-        return Reply.of(action, Flag.CALLBACK_QUERY)
-    }
-
-    fun replyToGetNextBookPart(): Reply {
-        val action = Consumer { update: Update -> bookPartSenderService.replyOnNextPageCallback(update) }
-        return Reply.of(action, Flag.CALLBACK_QUERY,
-                Predicate { update -> update.callbackQuery.data.startsWith("getnext:") })
-    }
-
-    fun getAllBooks(): Ability {
-        return Ability.builder()
-                .name("mybooks")
-                .info("Get list of all my books")
-                .input(0)
-                .privacy(Privacy.PUBLIC)
-                .locality(Locality.ALL)
-                .action { getAllBooksCommandHandler.answer(it.update()) }
-                .post {}
-                .build()
-    }
-
-    fun about(): Ability {
-        return Ability.builder()
-                .name("about")
-                .info("Bot description")
-                .input(0)
-                .privacy(Privacy.PUBLIC)
-                .locality(Locality.ALL)
-                .action { this.execute(SendMessage.builder()
-                        .chatId(it.chatId().toString())
-                        .text(AbilityUtils.getLocalizedMessage("bot.description", it.user().languageCode))
-                        .build())}
-                .post {}
-                .build()
-    }
-
-    fun help(): Ability {
-        return Ability.builder()
-                .name("help")
-                .info("Bot commands description")
-                .input(0)
-                .privacy(Privacy.PUBLIC)
-                .locality(Locality.ALL)
-                .action { this.execute(SendMessage.builder()
-                        .chatId(it.chatId().toString())
-                        .text(AbilityUtils.getLocalizedMessage("bot.help", it.user().languageCode))
-                        .build())}
-                .post {}
-                .build()
-    }
+    fun feedback(): Ability = publicAbility("feedback", "Information on how to leave feedback") { sendLocalized(it, "bot.feedback") }
 
     fun groupStart(): Reply {
-        val isStartInGroup = Predicate<Update> { AbilityUtils.isGroupUpdate(it) &&
-                ((it.message.newChatMembers.isNullOrEmpty().not() && it.message.newChatMembers[0].id==me.id)
-                        || (it.message.groupchatCreated!=null && it.message.groupchatCreated))}
-        val action = Consumer { update: Update -> startCommandHandler.answer(update) }
-        return Reply.of(action, Flag.MESSAGE, isStartInGroup)
-    }
-
-    fun feedback(): Ability {
-        return Ability.builder()
-                .name("feedback")
-                .info("Information on how to leave feedback")
-                .input(0)
-                .privacy(Privacy.PUBLIC)
-                .locality(Locality.ALL)
-                .action { this.execute(SendMessage.builder()
-                        .chatId(it.chatId().toString())
-                        .text(AbilityUtils.getLocalizedMessage("bot.feedback", it.user().languageCode))
-                        .build())}
-                .post {}
-                .build()
+        val isStartInGroup = Predicate<Update> {
+            AbilityUtils.isGroupUpdate(it) &&
+                    (it.message.newChatMembers.orEmpty().any { member -> member.userName.equals(botUsername, ignoreCase = true) }
+                            || it.message.groupchatCreated == true)
+        }
+        return Reply.of({ _, update -> startCommandHandler.answer(update) }, Flag.MESSAGE, isStartInGroup)
     }
 }

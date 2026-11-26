@@ -2,14 +2,15 @@ package org.stream.bot.services.impl.commands
 
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
-import org.stream.bot.Bot
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import org.stream.bot.entities.Chat
 import org.stream.bot.services.ICommandHandler
 import org.stream.bot.services.IChatService
 import org.stream.bot.services.MARKDOWN_ENABLED
 import org.stream.bot.utils.*
-import org.telegram.abilitybots.api.util.AbilityUtils.*
+import org.telegram.telegrambots.abilitybots.api.util.AbilityUtils.*
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
@@ -21,10 +22,13 @@ class StartCommandHandler : ICommandHandler {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @Autowired
-    lateinit var bot: Bot
+    lateinit var telegramClient: TelegramClient
 
     @Autowired
     lateinit var chatService: IChatService
+
+    @Value("\${bot.username}")
+    lateinit var botUsername: String
 
 
     @ExperimentalStdlibApi
@@ -37,13 +41,13 @@ class StartCommandHandler : ICommandHandler {
                     username = update.getChatUsername(),
                     chatType = update.getChatType()))
             val text = getLocalizedMessage("start.command.answer",
-                    getUser(update).languageCode, update.getChatFirstName(),bot.botUsername)
+                    getUser(update).languageCode, update.getChatFirstName(),botUsername)
             val message = SendMessage.builder()
                     .text(text.botText())
                     .chatId(getChatId(update).toString())
                     .build()
             message.enableMarkdown(MARKDOWN_ENABLED)
-            bot.execute(message)
+            telegramClient.execute(message)
             //TODO: Good morning/Good afternoon/Good evening
         } catch (e: TelegramApiException) {
 

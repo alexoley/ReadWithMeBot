@@ -10,6 +10,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.`when`
 import org.stream.bot.TestFixtures
+import org.stream.bot.anyK
 import org.stream.bot.entities.Chat
 import org.stream.bot.services.IChatService
 import org.stream.bot.services.IDocumentPersistManager
@@ -21,11 +22,13 @@ import reactor.core.publisher.Mono
 
 class RemoveBookCommandHandlerTest {
 
-    private val bot = mockBot()
+    private val bot = mockClient()
+    private val states = mockStates()
     private val chatService = mock(IChatService::class.java)
     private val persistManager = mock(IDocumentPersistManager::class.java)
     private val handler = RemoveBookCommandHandler().also {
-        it.bot = bot
+        it.telegramClient = bot
+        it.chatStates = states
         it.chatService = chatService
         it.persistManager = persistManager
     }
@@ -46,7 +49,7 @@ class RemoveBookCommandHandlerTest {
         handler.answer(TestFixtures.textUpdate("/removebook"))
 
         assertEquals(msg("remove.book.command.have.no.books"), lastSentMessage(bot).text)
-        verify(bot, never()).rewriteValueInMapEntry(anyString(), anyString(), anyString())
+        verify(states, never()).setState(anyString(), anyK(States::class.java))
     }
 
     @Test
@@ -59,7 +62,7 @@ class RemoveBookCommandHandlerTest {
         assertEquals(msg("remove.book.command.what.to.delete"), message.text)
         val keyboard = message.replyMarkup as InlineKeyboardMarkup
         assertEquals(listOf("aaa", "bbb"), keyboard.keyboard.map { it.single().callbackData })
-        verify(bot).rewriteValueInMapEntry(BotConstants.CHAT_STATES, TestFixtures.CHAT_ID_STR, States.WAIT_FOR_REMOVE.toString())
+        verify(states).setState(TestFixtures.CHAT_ID_STR, States.WAIT_FOR_REMOVE)
     }
 
     @Test
@@ -73,7 +76,7 @@ class RemoveBookCommandHandlerTest {
         assertEquals(listOf(book2), chat.fileList)
         verify(chatService).saveUser(chat)
         assertEquals(msg("remove.book.command.success.remove", "first.pdf"), lastSentMessage(bot).text)
-        verify(bot).rewriteValueInMapEntry(BotConstants.CHAT_STATES, TestFixtures.CHAT_ID_STR, States.NOT_WAITING.toString())
+        verify(states).setState(TestFixtures.CHAT_ID_STR, States.NOT_WAITING)
     }
 
     @Test

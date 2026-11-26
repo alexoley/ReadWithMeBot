@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.stream.bot.Bot
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import org.stream.bot.entities.FileInfo
 import org.stream.bot.exceptions.DublicateBookException
 import org.stream.bot.services.IDocumentPersistManager
@@ -31,14 +31,14 @@ class GoogleDriveTelegramPersistManager : IDocumentPersistManager, AbstractTeleg
     lateinit var googleDriveService: Drive
 
     @Autowired
-    override lateinit var bot: Bot
+    override lateinit var telegramClient: TelegramClient
 
     @Value("\${file.parent.folder.id}")
     lateinit var fileParentFolderId: String
 
     @Throws(TelegramApiException::class, DublicateBookException::class, IOException::class)
     override fun persistToStorage(update: Update, filenameGenerated: String, booksList: ArrayList<FileInfo>): FileInfo {
-        val telegramFileStream = bot.downloadFileAsStream(downloadTelegramFileWithId(update.message.document.fileId))
+        val telegramFileStream = telegramClient.downloadFileAsStream(downloadTelegramFileWithId(update.message.document.fileId))
         val fileMetadata = com.google.api.services.drive.model.File()
         fileMetadata.name = filenameGenerated
         fileMetadata.parents = listOf(fileParentFolderId)

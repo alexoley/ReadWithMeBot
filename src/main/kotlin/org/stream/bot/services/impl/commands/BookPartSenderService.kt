@@ -3,14 +3,14 @@ package org.stream.bot.services.impl.commands
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import org.stream.bot.Bot
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import org.stream.bot.entities.FileInfo
 import org.stream.bot.services.IChatService
 import org.stream.bot.services.MARKDOWN_ENABLED
 import org.stream.bot.services.impl.TextPartExtractorService
 import org.stream.bot.utils.KeyboardFactory
 import org.stream.bot.utils.Subscribers
-import org.telegram.abilitybots.api.util.AbilityUtils
+import org.telegram.telegrambots.abilitybots.api.util.AbilityUtils
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
@@ -24,13 +24,11 @@ class BookPartSenderService {
     lateinit var textPartExtractorService: TextPartExtractorService
 
     @Autowired
-    lateinit var bot: Bot
+    lateinit var telegramClient: TelegramClient
 
     @Autowired
     lateinit var chatService: IChatService
 
-    @Autowired
-    lateinit var bookPartSenderService: BookPartSenderService
 
     fun String?.makeBold(): String {
         return "```$this```"
@@ -47,7 +45,7 @@ class BookPartSenderService {
             message.enableMarkdown(MARKDOWN_ENABLED)
             message.disableWebPagePreview()
             message.enableNotification()
-            bot.execute(message)
+            telegramClient.execute(message)
         } catch (e: TelegramApiException) {
             logger.error(e.message)
             e.printStackTrace()
@@ -61,7 +59,7 @@ class BookPartSenderService {
                     if (chat.fileList.asSequence().filter { it.stillReading }.any { it.checksum.equals(callback,true) }) {
                         val fileinfo = chat.fileList.asSequence()
                                 .first { fileInfo -> fileInfo.checksum.equals(callback,true) }
-                        bookPartSenderService.sendMessageAndUpdateFileInfo(fileinfo, AbilityUtils.getChatId(update).toString())
+                        sendMessageAndUpdateFileInfo(fileinfo, AbilityUtils.getChatId(update).toString())
                         chatService.saveUser(chat).subscribe()
                     }
                 },

@@ -6,10 +6,10 @@ import org.stream.bot.utils.ChatType
 import org.stream.bot.utils.Subscribers
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.Document
-import org.telegram.telegrambots.meta.api.objects.Message
+import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.User
-import org.telegram.telegrambots.meta.api.objects.Chat as TelegramChat
+import org.telegram.telegrambots.meta.api.objects.chat.Chat as TelegramChat
 
 /** Builders for Telegram objects and domain entities used across tests. */
 object TestFixtures {
@@ -27,9 +27,7 @@ object TestFixtures {
     }
 
     fun privateChat(): TelegramChat {
-        val chat = TelegramChat()
-        chat.id = CHAT_ID
-        chat.type = "private"
+        val chat = TelegramChat(CHAT_ID, "private")
         chat.firstName = "John"
         chat.lastName = "Doe"
         chat.userName = "johndoe"
@@ -37,9 +35,7 @@ object TestFixtures {
     }
 
     fun groupChat(): TelegramChat {
-        val chat = TelegramChat()
-        chat.id = GROUP_ID
-        chat.type = "group"
+        val chat = TelegramChat(GROUP_ID, "group")
         chat.title = "Book club"
         return chat
     }
@@ -62,7 +58,7 @@ object TestFixtures {
 
     fun document(fileName: String = "book.txt",
                  mimeType: String = "text/plain",
-                 fileSize: Int = 1024,
+                 fileSize: Long = 1024,
                  fileId: String = "telegram-file-id"): Document {
         val document = Document()
         document.fileId = fileId
@@ -99,7 +95,7 @@ object TestFixtures {
             fileName = fileName,
             fileNameInSystem = "1_$fileName",
             mimeType = mimeType,
-            fileSize = 1024,
+            fileSize = 1024L,
             checksum = checksum,
             stillReading = stillReading)
 

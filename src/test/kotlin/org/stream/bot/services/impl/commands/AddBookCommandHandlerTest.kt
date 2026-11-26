@@ -28,7 +28,8 @@ import reactor.core.publisher.Mono
 
 class AddBookCommandHandlerTest {
 
-    private val bot = mockBot()
+    private val bot = mockClient()
+    private val states = mockStates()
     private val chatService = mock(IChatService::class.java)
     private val persistManager = mock(IDocumentPersistManager::class.java)
     private val sender = mock(BookPartSenderService::class.java)
@@ -36,7 +37,8 @@ class AddBookCommandHandlerTest {
 
     @BeforeEach
     fun setUp() {
-        handler.bot = bot
+        handler.telegramClient = bot
+        handler.chatStates = states
         handler.chatService = chatService
         handler.documentPersistManager = persistManager
         handler.bookPartSenderService = sender
@@ -60,7 +62,7 @@ class AddBookCommandHandlerTest {
         val message = lastSentMessage(bot)
         assertEquals(msg("addbook.command.send.me.book"), message.text)
         assertTrue(message.replyMarkup is ForceReplyKeyboard)
-        verify(bot).rewriteValueInMapEntry(BotConstants.CHAT_STATES, TestFixtures.CHAT_ID_STR, States.WAIT_FOR_BOOK.toString())
+        verify(states).setState(TestFixtures.CHAT_ID_STR, States.WAIT_FOR_BOOK)
     }
 
     @Test
@@ -70,7 +72,7 @@ class AddBookCommandHandlerTest {
         handler.answer(TestFixtures.textUpdate("/addbook"))
 
         assertEquals(msg("addbook.command.book.limit.exceeded", 2), lastSentMessage(bot).text)
-        verify(bot, never()).rewriteValueInMapEntry(anyString(), anyString(), anyString())
+        verify(states, never()).setState(anyString(), anyK(States::class.java))
     }
 
     @Test
@@ -113,7 +115,7 @@ class AddBookCommandHandlerTest {
         val message = lastSentMessage(bot)
         assertEquals(msg("addbook.command.successful.book.addition", "book.txt"), message.text)
         assertTrue(message.replyMarkup is ReplyKeyboardRemove)
-        verify(bot).rewriteValueInMapEntry(BotConstants.CHAT_STATES, TestFixtures.CHAT_ID_STR, States.NOT_WAITING.toString())
+        verify(states).setState(TestFixtures.CHAT_ID_STR, States.NOT_WAITING)
         verify(sender).sendMessageAndUpdateFileInfo(stored, TestFixtures.CHAT_ID_STR)
         verify(chatService).saveUser(chat)
     }
@@ -123,7 +125,7 @@ class AddBookCommandHandlerTest {
         givenChat(TestFixtures.chat())
         persistReturns { TestFixtures.fileInfo() }
 
-        handler.firstReply(TestFixtures.documentUpdate(TestFixtures.document(fileSize = 2 * 1024 * 1024)))
+        handler.firstReply(TestFixtures.documentUpdate(TestFixtures.document(fileSize = 2L * 1024 * 1024)))
 
         val texts = sentMessages(bot).map { it.text }
         assertEquals(listOf(msg("addbook.command.loading.file"),
@@ -136,7 +138,7 @@ class AddBookCommandHandlerTest {
         givenChat(chat)
 
         handler.firstReply(TestFixtures.documentUpdate(
-                TestFixtures.document(fileSize = BotConstants.MAX_TELEGRAM_FILE_SIZE + 1)))
+                TestFixtures.document(fileSize = BotConstants.MAX_TELEGRAM_FILE_SIZE + 1L)))
 
         assertEquals(msg("addbook.command.too.large.book"), lastSentMessage(bot).text)
         verifyNoInteractions(persistManager, sender)

@@ -15,10 +15,11 @@ books are stored in the `books-data` volume. To use Google Drive instead, leave
 
 ## Run locally
 
-The build uses Gradle 6.3 and Kotlin 1.3, which need **JDK 8–11** to run Gradle (JDK 17+ will not work).
+Stack: Java 25, Kotlin 2.4, Spring Boot 4, telegrambots 10, Gradle 9.
+Gradle needs JDK 17+ to start; the project itself is compiled and tested with a **Java 25 toolchain**,
+which Gradle downloads automatically if it is not installed.
 
 ```sh
-export JAVA_HOME=/path/to/jdk-11
 export BOT_TOKEN=... BOT_USERNAME=... BOT_CREATORID=...
 export MONGO_URI='mongodb://user:password@localhost:27017/bot?authSource=admin'
 export SPRING_PROFILES_ACTIVE=local
@@ -28,7 +29,7 @@ export SPRING_PROFILES_ACTIVE=local
 ## Tests
 
 ```sh
-JAVA_HOME=/path/to/jdk-11 ./gradlew test
+./gradlew test
 ```
 
 Unit tests need neither MongoDB nor Telegram. `ReadWithMeBotApplicationTests` (full Spring context)

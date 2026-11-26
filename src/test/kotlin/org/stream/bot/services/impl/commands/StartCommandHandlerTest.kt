@@ -15,17 +15,17 @@ import org.stream.bot.utils.Subscribers
 
 class StartCommandHandlerTest {
 
-    private val bot = mockBot()
+    private val bot = mockClient()
     private val chatService = mock(IChatService::class.java)
     private val handler = StartCommandHandler().also {
-        it.bot = bot
+        it.telegramClient = bot
         it.chatService = chatService
+        it.botUsername = "ReadWithMeBot"
     }
 
     @Test
     @ExperimentalStdlibApi
     fun `registers private chat and greets user`() {
-        `when`(bot.botUsername).thenReturn("ReadWithMeBot")
 
         handler.answer(TestFixtures.textUpdate("/start"))
 
@@ -47,7 +47,6 @@ class StartCommandHandlerTest {
     @Test
     @ExperimentalStdlibApi
     fun `registers group chat by its title`() {
-        `when`(bot.botUsername).thenReturn("ReadWithMeBot")
 
         handler.answer(TestFixtures.textUpdate("/start", chat = TestFixtures.groupChat()))
 

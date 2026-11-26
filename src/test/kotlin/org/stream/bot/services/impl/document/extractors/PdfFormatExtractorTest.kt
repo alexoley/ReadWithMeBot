@@ -4,6 +4,7 @@ import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.pdmodel.PDPageContentStream
 import org.apache.pdfbox.pdmodel.font.PDType1Font
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -23,7 +24,7 @@ class PdfFormatExtractorTest {
                 doc.addPage(page)
                 PDPageContentStream(doc, page).use { stream ->
                     stream.beginText()
-                    stream.setFont(PDType1Font.HELVETICA, 12f)
+                    stream.setFont(PDType1Font(Standard14Fonts.FontName.HELVETICA), 12f)
                     stream.newLineAtOffset(50f, 700f)
                     stream.showText(text)
                     stream.endText()

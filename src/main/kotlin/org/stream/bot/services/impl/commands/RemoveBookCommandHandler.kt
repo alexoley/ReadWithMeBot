@@ -3,7 +3,8 @@ package org.stream.bot.services.impl.commands
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import org.stream.bot.Bot
+import org.telegram.telegrambots.meta.generics.TelegramClient
+import org.stream.bot.services.ChatStateStore
 import org.stream.bot.services.ICommandHandler
 import org.stream.bot.services.IDocumentPersistManager
 import org.stream.bot.services.IChatService
@@ -12,9 +13,9 @@ import org.stream.bot.utils.BotConstants
 import org.stream.bot.utils.KeyboardFactory
 import org.stream.bot.utils.States
 import org.stream.bot.utils.Subscribers
-import org.telegram.abilitybots.api.util.AbilityUtils
-import org.telegram.abilitybots.api.util.AbilityUtils.getLocalizedMessage
-import org.telegram.abilitybots.api.util.AbilityUtils.getUser
+import org.telegram.telegrambots.abilitybots.api.util.AbilityUtils
+import org.telegram.telegrambots.abilitybots.api.util.AbilityUtils.getLocalizedMessage
+import org.telegram.telegrambots.abilitybots.api.util.AbilityUtils.getUser
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 
@@ -24,7 +25,10 @@ class RemoveBookCommandHandler : ICommandHandler {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @Autowired
-    lateinit var bot: Bot
+    lateinit var telegramClient: TelegramClient
+
+    @Autowired
+    lateinit var chatStates: ChatStateStore
 
     @Autowired
     lateinit var chatService: IChatService
@@ -36,8 +40,7 @@ class RemoveBookCommandHandler : ICommandHandler {
         chatService.getUserByIdAndSubscriber(AbilityUtils.getChatId(update).toString(), Subscribers.TELEGRAM).subscribe(
                 { chat ->
                     if (chat != null) {
-                        val sendMessage = SendMessage()
-                        sendMessage.chatId = AbilityUtils.getChatId(update).toString()
+                        val sendMessage = SendMessage(AbilityUtils.getChatId(update).toString(), "")
                         sendMessage.enableMarkdown(MARKDOWN_ENABLED)
                         if (chat.fileList.isEmpty()) {
                             sendMessage.text = getLocalizedMessage("remove.book.command.have.no.books",
@@ -46,10 +49,9 @@ class RemoveBookCommandHandler : ICommandHandler {
                             sendMessage.text = getLocalizedMessage("remove.book.command.what.to.delete",
                                     getUser(update).languageCode).botText()
                             sendMessage.replyMarkup = KeyboardFactory.inlineBookDeleteKeyboardFromList(chat.fileList)
-                            bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES, AbilityUtils.getChatId(update).toString(),
-                                    States.WAIT_FOR_REMOVE.toString())
+                            chatStates.setState(AbilityUtils.getChatId(update).toString(), States.WAIT_FOR_REMOVE)
                         }
-                        bot.execute(sendMessage)
+                        telegramClient.execute(sendMessage)
                     }
                 },
                 { e -> logger.error(e.message) }
@@ -65,16 +67,14 @@ class RemoveBookCommandHandler : ICommandHandler {
                         if (removedFileInfo != null && chat.fileList.remove(removedFileInfo)) {
                             chatService.saveUser(chat).subscribe {
                                 if (persistManager.removeFromStorage(removedFileInfo)) {
-                                    bot.execute(SendMessage.builder()
+                                    telegramClient.execute(SendMessage.builder()
                                             .text(getLocalizedMessage("remove.book.command.success.remove",
                                                     getUser(update).languageCode,removedFileInfo.fileName).botText())
                                             .chatId(AbilityUtils.getChatId(update).toString())
                                             .build())
                                 }
                             }
-                            bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES,
-                                    AbilityUtils.getChatId(update).toString(),
-                                    States.NOT_WAITING.toString())
+                            chatStates.setState(AbilityUtils.getChatId(update).toString(), States.NOT_WAITING)
                         }
                     }
                 },

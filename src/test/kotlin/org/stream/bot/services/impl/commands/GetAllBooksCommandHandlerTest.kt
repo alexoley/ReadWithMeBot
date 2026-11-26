@@ -12,10 +12,10 @@ import reactor.core.publisher.Mono
 
 class GetAllBooksCommandHandlerTest {
 
-    private val bot = mockBot()
+    private val bot = mockClient()
     private val chatService = mock(IChatService::class.java)
     private val handler = GetAllBooksCommandHandler().also {
-        it.bot = bot
+        it.telegramClient = bot
         it.chatService = chatService
     }
 

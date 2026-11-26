@@ -1,6 +1,6 @@
 package org.stream.bot.utils
 
-import org.telegram.abilitybots.api.util.AbilityUtils
+import org.telegram.telegrambots.abilitybots.api.util.AbilityUtils
 import org.telegram.telegrambots.meta.api.objects.Update
 
 fun Update.getChatFirstName(): String =

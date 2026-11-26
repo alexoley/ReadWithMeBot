@@ -3,7 +3,8 @@ package org.stream.bot.services.impl.commands
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import org.stream.bot.Bot
+import org.telegram.telegrambots.meta.generics.TelegramClient
+import org.stream.bot.services.ChatStateStore
 import org.stream.bot.entities.Chat
 import org.stream.bot.entities.FileInfo
 import org.stream.bot.exceptions.DublicateBookException
@@ -12,9 +13,9 @@ import org.stream.bot.utils.BotConstants
 import org.stream.bot.utils.KeyboardFactory
 import org.stream.bot.utils.States
 import org.stream.bot.utils.Subscribers
-import org.telegram.abilitybots.api.util.AbilityUtils
-import org.telegram.abilitybots.api.util.AbilityUtils.getLocalizedMessage
-import org.telegram.abilitybots.api.util.AbilityUtils.getUser
+import org.telegram.telegrambots.abilitybots.api.util.AbilityUtils
+import org.telegram.telegrambots.abilitybots.api.util.AbilityUtils.getLocalizedMessage
+import org.telegram.telegrambots.abilitybots.api.util.AbilityUtils.getUser
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ForceReplyKeyboard
@@ -35,7 +36,10 @@ class AddBookCommandHandler : ICommandHandler {
     lateinit var documentPersistManager: IDocumentPersistManager
 
     @Autowired
-    lateinit var bot: Bot
+    lateinit var telegramClient: TelegramClient
+
+    @Autowired
+    lateinit var chatStates: ChatStateStore
 
     @Autowired
     lateinit var chatService: IChatService
@@ -46,8 +50,7 @@ class AddBookCommandHandler : ICommandHandler {
     override fun answer(update: Update) {
         val chatId = AbilityUtils.getChatId(update).toString()
         val languageCode = getUser(update).languageCode
-        val sendMessage = SendMessage()
-        sendMessage.chatId = chatId
+        val sendMessage = SendMessage(chatId, "")
         sendMessage.enableMarkdown(MARKDOWN_ENABLED)
 
         //Check if book limit not reached
@@ -67,8 +70,7 @@ class AddBookCommandHandler : ICommandHandler {
                                 sendMessage.text = getLocalizedMessage("addbook.command.send.me.book",
                                         languageCode).botText()
                                 sendMessage.replyMarkup = ForceReplyKeyboard.builder().forceReply(true).build()
-                                bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES, chatId,
-                                        States.WAIT_FOR_BOOK.toString())
+                                chatStates.setState(chatId, States.WAIT_FOR_BOOK)
                             }
                             executeSafely(sendMessage)
                         },
@@ -83,7 +85,7 @@ class AddBookCommandHandler : ICommandHandler {
 
     private fun executeSafely(sendMessage: SendMessage) {
         try {
-            bot.execute(sendMessage)
+            telegramClient.execute(sendMessage)
         } catch (e: TelegramApiException) {
             logger.error(e.message)
         }
@@ -115,8 +117,7 @@ class AddBookCommandHandler : ICommandHandler {
 
     private fun process(update: Update, monoChat: Chat): FileInfo? {
         var fileInfo : FileInfo? = null
-        val sendMessage = SendMessage()
-        sendMessage.chatId = AbilityUtils.getChatId(update).toString()
+        val sendMessage = SendMessage(AbilityUtils.getChatId(update).toString(), "")
         var sendText: String? = ""
         try {
 
@@ -135,9 +136,7 @@ class AddBookCommandHandler : ICommandHandler {
                 return fileInfo
             }
 
-            bot.rewriteValueInMapEntry(BotConstants.CHAT_STATES,
-                    AbilityUtils.getChatId(update).toString(),
-                    States.NOT_WAITING.toString())
+            chatStates.setState(AbilityUtils.getChatId(update).toString(), States.NOT_WAITING)
 
             //Send loading message if file more than 1 megabyte
             if (update.message.document.fileSize > 1024 * 1024) {
@@ -149,7 +148,7 @@ class AddBookCommandHandler : ICommandHandler {
                         .replyMarkup(KeyboardFactory.removeKeyboard())
                         .build()
                 loadingSendMessage.enableMarkdown(MARKDOWN_ENABLED)
-                bot.execute(loadingSendMessage)
+                telegramClient.execute(loadingSendMessage)
             }
             val filenameGenerated = System.currentTimeMillis().toString() + "_" + update.message.document.fileName
             fileInfo = documentPersistManager.persistToStorage(update, filenameGenerated, monoChat.fileList)
